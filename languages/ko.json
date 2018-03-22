@@ -1,0 +1,15 @@
+{
+	"text":{
+		"repeat_text":"{REPEAT_START_DATE} 부터 {REPEAT_END_DATE} 까지 {REPEAT_TYPE} {REPEAT_START_TYPE} 반복되고 있는 일정입니다.",
+		"year":"{YEAR}년",
+		"month":"{MONTH}월",
+		"date":"{DATE}일"
+	},
+	"repeat_type":{
+		"DAILY":"매일",
+		"WEEKLY":"매주",
+		"MONTHLY":"매달",
+		"MONTHLY_END":"매달 마지막날",
+		"ANNUALLY":"매년"
+	}
+}
