@@ -17,7 +17,6 @@ var Calendar = {
 		var $context = $("#"+id);
 		
 		if (id == "ModuleCalendarContext") {
-			//defaultView
 			var $calendar = $("div[data-role=calendar]",$context);
 			var views = {"month":"month","week":"agendaWeek","day":"agendaDay"};
 			var view = $calendar.attr("data-view");
@@ -57,11 +56,11 @@ var Calendar = {
 					center:"prev title next",
 					right:$calendar.attr("data-editable") == "TRUE" ? "month,agendaWeek,agendaDay add" : "month,agendaWeek,agendaDay"
 				},
+				timezone:"local",
 				defaultView:views[view],
 				defaultDate:defaultDate,
 				editable:$calendar.attr("data-editable") == "TRUE",
 				selectable:$calendar.attr("data-selectable") == "TRUE",
-//				eventLimit:true,
 				displayEventEnd:false,
 				handleWindowResize:false,
 				contentHeight:"auto",
