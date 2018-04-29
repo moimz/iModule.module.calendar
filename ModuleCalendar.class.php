@@ -203,9 +203,6 @@ class ModuleCalendar {
 		$IM = $this->IM;
 		$Module = $this;
 		
-		$this->IM->addHeadResource('script',$this->IM->getModule('coursemos')->getModule()->getDir().'/admin/scripts/script.js');
-		$this->IM->loadLanguage('module','coursemos','ko');
-		
 		ob_start();
 		INCLUDE $this->getModule()->getPath().'/admin/index.php';
 		$panel = ob_get_contents();
@@ -256,23 +253,10 @@ class ModuleCalendar {
 		$templet->title = $this->IM->getText('text/templet');
 		$templet->name = 'templet';
 		$templet->type = 'templet';
-		$templet->target = 'competency';
+		$templet->target = 'calendar';
 		$templet->use_default = true;
 		$templet->value = $values != null && isset($values->templet) == true ? $values->templet : '#';
 		$configs[] = $templet;
-		
-		if ($context == 'diagnosis') {
-			$form = new stdClass();
-			$form->title = '진단유형선택';
-			$form->name = 'form';
-			$form->type = 'select';
-			$form->data = array();
-			$forms = $this->db()->select($this->table->diagnosis_form)->get();
-			for ($i=0, $loop=count($forms);$i<$loop;$i++) {
-				$form->data[] = array($forms[$i]->idx,$forms[$i]->title);
-			}
-			$configs[] = $form;
-		}
 		
 		return $configs;
 	}
@@ -796,8 +780,6 @@ class ModuleCalendar {
 		
 		return $this->getTemplet()->getModal($title,$content,true,array('width'=>500),$buttons);
 	}
-	
-	
 	
 	/**
 	 * 일정 상세보기 모달을 가져온다.
