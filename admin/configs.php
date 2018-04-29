@@ -16,9 +16,9 @@ if (defined('__IM__') == false) exit;
 var config = new Ext.form.Panel({
 	id:"ModuleConfigForm",
 	border:false,
-	bodyPadding:10,
-	width:600,
-	fieldDefaults:{labelAlign:"right",labelWidth:100,anchor:"100%",allowBlank:true},
+	bodyPadding:"10 10 5 10",
+	width:500,
+	fieldDefaults:{labelAlign:"right",labelWidth:80,anchor:"100%",allowBlank:true},
 	items:[
 		new Ext.form.FieldSet({
 			title:Calendar.getText("admin/configs/form/default_setting"),
