@@ -23,7 +23,7 @@ var config = new Ext.form.Panel({
 		new Ext.form.FieldSet({
 			title:Calendar.getText("admin/configs/form/default_setting"),
 			items:[
-				Admin.templetField(Calendar.getText("admin/configs/form/templet"),"templet","calendar",false)
+				Admin.templetField(Calendar.getText("admin/configs/form/templet"),"templet","module","calendar",false)
 			]
 		})
 	]
