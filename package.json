@@ -43,22 +43,23 @@
 					"is_null":true,
 					"comment":"템플릿설정"
 				},
-				"use_category":{
-					"type":"enum",
-					"length":"'NONE','USED'",
-					"default":"NONE",
-					"comment":"카테고리사용여부"
-				},
 				"schedule":{
 					"type":"int",
 					"length":11,
 					"default":0,
 					"comment":"일정수"
+				},
+				"latest_update":{
+					"type":"int",
+					"length":11,
+					"default":0,
+					"comment":"마지막 업데이트일시"
 				}
 			},
 			"indexes":{
 				"cid":"primary_key"
-			}
+			},
+			"comment":"캘린더 테이블"
 		},
 		"calendar_category_table":{
 			"columns":{
@@ -82,23 +83,47 @@
 					"length":7,
 					"comment":"카테고리색상"
 				},
+				"ical":{
+					"type":"varchar",
+					"length":255,
+					"is_null":true,
+					"comment":"iCal 주소"
+				},
+				"permission":{
+					"type":"text",
+					"is_null":true,
+					"comment":"권한"
+				},
 				"sort":{
 					"type":"int",
-					"length":11
+					"length":11,
+					"comment":"정렬순서"
+				},
+				"latest_update":{
+					"type":"int",
+					"length":11,
+					"default":0,
+					"comment":"마지막 업데이트일시"
 				}
 			},
 			"indexes":{
 				"idx":"primary_key",
 				"cid":"index"
 			},
-			"auto_increment":"idx"
+			"auto_increment":"idx",
+			"comment":"캘린더 카테고리 테이블"
 		},
-		"calendar_schedule_table":{
+		"calendar_event_table":{
 			"columns":{
-				"idx":{
-					"type":"int",
-					"length":11,
-					"comment":"일정고유값"
+				"uid":{
+					"type":"varchar",
+					"length":36,
+					"comment":"일정아이디"
+				},
+				"rid":{
+					"type":"varchar",
+					"length":50,
+					"comment":"반복아이디"
 				},
 				"cid":{
 					"type":"varchar",
@@ -107,17 +132,22 @@
 				},
 				"category":{
 					"type":"int",
-					"length":11
+					"length":11,
+					"comment":"카테고리고유값"
 				},
 				"midx":{
 					"type":"int",
 					"length":11,
 					"comment":"일정등록회원고유번호"
 				},
-				"title":{
+				"summary":{
 					"type":"varchar",
-					"length":100,
+					"length":255,
 					"comment":"일정명"
+				},
+				"description":{
+					"type":"text",
+					"comment":"상세내용"
 				},
 				"start_time":{
 					"type":"int",
@@ -135,32 +165,41 @@
 					"default":"TRUE",
 					"comment":"하루종일여부"
 				},
-				"repeat":{
-					"type":"enum",
-					"length":"'NONE','DAILY','WEEKLY','MONTHLY','MONTHLY_END','ANNUALLY'",
-					"default":"NONE",
-					"comment":"반복여부"
+				"recurrence":{
+					"type":"varchar",
+					"length":100,
+					"comment":"반복조건"
 				},
-				"repeat_idx":{
+				"url":{
+					"type":"varchar",
+					"length":255,
+					"comment":"URL"
+				},
+				"reg_date":{
 					"type":"int",
 					"length":11,
 					"default":0,
-					"comment":"반복최초일정고유번호"
+					"comment":"일정생성일시"
 				},
-				"repeat_end_date":{
+				"sequence":{
 					"type":"int",
 					"length":11,
-					"comment":"반복종료일"
+					"default":0,
+					"comment":"수정횟수"
+				},
+				"latest_update":{
+					"type":"int",
+					"length":11,
+					"comment":"마지막수정일시"
 				}
 			},
 			"indexes":{
-				"idx":"primary_key",
-				"cid":"index",
-				"midx":"index",
-				"repeat_idx":"index",
-				"start_time,end_time,cid":"index"
+				"uid,rid":"primary_key",
+				"uid":"index",
+				"cid,category":"index",
+				"midx":"index"
 			},
-			"auto_increment":"idx"
+			"comment":"캘린더 이벤트 테이블"
 		}
 	}
 }
