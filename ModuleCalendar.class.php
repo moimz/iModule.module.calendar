@@ -1,6 +1,6 @@
 <?php
 /**
- * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodule.kr)
+ * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodules.io)
  *
  * 캘린더 및 일정과 관련된 모든 기능을 제어한다.
  * 
@@ -64,7 +64,7 @@ class ModuleCalendar {
 		$this->table = new stdClass();
 		$this->table->calendar = 'calendar_table';
 		$this->table->category = 'calendar_category_table';
-		$this->table->schedule = 'calendar_schedule_table';
+		$this->table->event = 'calendar_event_table';
 	}
 	
 	/**
@@ -169,26 +169,6 @@ class ModuleCalendar {
 		$this->IM->fireEvent('afterGetApi',$this->getModule()->getName(),$api,$values,$data);
 		
 		return $data;
-	}
-	
-	/**
-	 * [사이트관리자] 모듈 설정패널을 구성한다.
-	 *
-	 * @return string $panel 설정패널 HTML
-	 */
-	function getConfigPanel() {
-		/**
-		 * 설정패널 PHP에서 iModule 코어클래스와 모듈코어클래스에 접근하기 위한 변수 선언
-		 */
-		$IM = $this->IM;
-		$Module = $this->getModule();
-		
-		ob_start();
-		INCLUDE $this->getModule()->getPath().'/admin/configs.php';
-		$panel = ob_get_contents();
-		ob_end_clean();
-		
-		return $panel;
 	}
 	
 	/**
@@ -526,11 +506,10 @@ class ModuleCalendar {
 			$idx = $year.'/'.$month.'/'.$day;
 		}
 		
-		$context = PHP_EOL.'<div data-role="calendar" data-editable="TRUE" data-selectable="TRUE" data-view="'.$view.'" data-idx="'.$idx.'"></div>'.PHP_EOL;
+		$context = PHP_EOL.'<div data-role="calendar" data-writable="'.($this->checkPermission($cid,0,'write') == true ? "TRUE" : "FALSE").'" data-editable="'.($this->checkPermission($cid,0,'edit') == true ? "TRUE" : "FALSE").'" data-selectable="TRUE" data-view="'.$view.'" data-idx="'.$idx.'"></div>'.PHP_EOL;
 		
 		$permission = new stdClass();
-		$permission->add = $this->checkPermission($cid,'add');
-		$permission->modify = $this->checkPermission($cid,'modify');
+		$permission->write = $this->checkPermission($cid,null,'write');
 		
 		$header = PHP_EOL.'<div id="ModuleCalendarContext" data-cid="'.$cid.'">'.PHP_EOL;
 		$footer = PHP_EOL.'</div>'.PHP_EOL.'<script>Calendar.init("ModuleCalendarContext");</script>';
@@ -549,7 +528,7 @@ class ModuleCalendar {
 	 * @param int $end 일정 종료시각
 	 * @return string $html 모달 HTML
 	 */
-	function getAddModal($cid,$start,$end) {
+	function getEventWriteModal($cid,$start,$end) {
 		$is_allday = date('H',$start) == '00' && date('H',$end) == '00';
 		
 		$start_date = date('Y-m-d',$start);
@@ -562,13 +541,13 @@ class ModuleCalendar {
 		
 		$content = '<input type="hidden" name="cid" value="'.$cid.'">';
 		
-		$content.= '<div data-module="calendar" data-role="schedule">';
+		$content.= '<div data-module="calendar" data-role="write">';
 		$content.= '<div data-role="inputset">';
 		$content.= '<div data-role="input"><input type="text" name="title" placeholder="일정명"></div>';
-		$content.= '<div data-role="text" class="color"><i data-role="color"></i></div>';
 		$content.= '<div data-role="input"><select name="category">';
 		$categories = $this->db()->select($this->table->category)->where('cid',$cid)->orderBy('sort','asc')->get();
 		foreach ($categories as $category) {
+			if ($this->checkPermission($cid,$category->idx,'write') == false) continue;
 			$content.= '<option value="'.$category->idx.'" data-color="'.$category->color.'">'.$category->title.'</option>';
 		}
 		$content.= '</select></div>';
@@ -594,16 +573,80 @@ class ModuleCalendar {
 		$content.= '</div>';
 		
 		$content.= '<div data-role="inputset" class="label">';
-		$content.= '<div data-role="text" class="label">반복</div>';
+		$content.= '<div data-role="text" class="label">반복주기</div>';
 		$content.= '<div data-role="input"><select name="repeat">';
 		$content.= '<option value="NONE">반복없음</option>';
 		foreach ($this->getText('repeat_type') as $value=>$display) {
 			$content.= '<option value="'.$value.'">'.$display.'</option>';
 		}
-		$content.= '</select></div>';
-		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
-		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD"></div>';
+		$content.= '</select></div></div>';
+		
+		$content.= '<div data-role="inputset" data-name="repeat_interval">';
+		$content.= '<div data-role="input"><input type="number" name="repeat_interval" value="1"></div>';
+		$content.= '<div data-role="text" data-daily="일 마다" data-weekly="주 마다" data-monthly="개월 마다" data-yearly="년 마다"></div>';
 		$content.= '</div>';
+		
+		$content.= '<div data-role="repeat_rule" data-rule="WEEKLY">';
+		$content.= '<ul>';
+		foreach ($this->getText('week') as $value=>$name) {
+			$content.= '<li><button type="button" data-value="'.$value.'">'.$name.'</button></li>';
+		}
+		$content.= '</ul>';
+		$content.= '</div>';
+		
+		$content.= '<div data-role="repeat_rule" data-rule="MONTHLY">';
+		$content.= '<div data-role="input"><select name="repeat_rule_type">';
+		foreach ($this->getText('repeat_rule_type') as $value=>$name) {
+			$content.= '<option value="'.$value.'">'.$name.'</option>';
+		}
+		$content.= '</select></div>';
+		$content.= '<ul>';
+		for ($i=1;$i<=31;$i++) {
+			$content.= '<li><button type="button" data-value="'.$i.'">'.$i.'</button></li>';
+		}
+		$content.= '</ul>';
+		
+		$content.= '<div data-role="inputset">';
+		$content.= '<div data-role="input"><select name="repeat_rule_monthly_1">';
+		foreach ($this->getText('repeat_rule1') as $value=>$name) {
+			$content.= '<option value="'.$value.'">'.$name.'</option>';
+		}
+		$content.= '</select></div>';
+		$content.= '<div data-role="input"><select name="repeat_rule_monthly_2">';
+		foreach ($this->getText('repeat_rule2') as $value=>$name) {
+			$content.= '<option value="'.$value.'">'.$name.'</option>';
+		}
+		$content.= '</select></div>';
+		$content.= '</div>';
+		
+		$content.= '</div>';
+		
+		$content.= '<div data-role="repeat_rule" data-rule="YEARLY">';
+		$content.= '<ul>';
+		for ($i=1;$i<=12;$i++) {
+			$content.= '<li><button type="button" data-value="'.$i.'">'.$this->getText('month/'.$i).'</button></li>';
+		}
+		$content.= '</ul>';
+		$content.= '<div data-role="input"><label><input type="checkbox" name="repeat_rule_apply" value="TRUE">조건지정</label></div>';
+		$content.= '<div data-role="inputset">';
+		$content.= '<div data-role="input"><select name="repeat_rule_yearly_1">';
+		foreach ($this->getText('repeat_rule1') as $value=>$name) {
+			$content.= '<option value="'.$value.'">'.$name.'</option>';
+		}
+		$content.= '</select></div>';
+		$content.= '<div data-role="input"><select name="repeat_rule_yearly_2">';
+		foreach ($this->getText('repeat_rule2') as $value=>$name) {
+			$content.= '<option value="'.$value.'">'.$name.'</option>';
+		}
+		$content.= '</select></div>';
+		$content.= '</div>';
+		
+//		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
+//		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD"></div>';
+//		$content.= '</div>';
+		
+		
+		
 		$content.= '</div>';
 		
 		$buttons = array();
@@ -618,7 +661,7 @@ class ModuleCalendar {
 		$button->text = '추가';
 		$buttons[] = $button;
 		
-		return $this->getTemplet()->getModal($title,$content,true,array('width'=>500),$buttons);
+		return $this->getTemplet()->getModal($title,$content,true,array('width'=>400),$buttons);
 	}
 	
 	/**
@@ -886,17 +929,21 @@ class ModuleCalendar {
 	 * 권한을 확인한다.
 	 *
 	 * @param string $cid 캘린더아이디
+	 * @param int $category 카테고리고유값
 	 * @param string $type 확인할 권한코드
 	 * @return boolean $hasPermssion
 	 */
-	function checkPermission($cid,$type) { return true;
-		if ($this->IM->getModule('member')->isAdmin() == true) return true;
+	function checkPermission($cid,$category,$type) {
+		$categories = $this->db()->select($this->table->category)->where('cid',$cid);
+		if ($category) $categories->where('idx',$category);
+		$categories = $categories->get();
 		
-		$calendar = $this->getCalendar($cid);
-		$permission = json_decode($board->permission);
+		foreach ($categories as $category) {
+			$permission = json_decode($category->permission);
+			if (isset($permission->{$type}) == true && $this->IM->parsePermissionString($permission->{$type}) == true) return true;
+		}
 		
-		if (isset($permission->{$type}) == false) return false;
-		return $this->IM->parsePermissionString($permission->{$type});
+		return false;
 	}
 	
 	/**
@@ -907,6 +954,17 @@ class ModuleCalendar {
 	function updateCalendar($cid) {
 		$total = $this->db()->select($this->table->schedule)->where('cid',$cid)->count();
 		$this->db()->update($this->table->calendar,array('schedule'=>$total))->where('cid',$cid)->execute();
+	}
+	
+	/**
+	 * iCal 이벤트를 가져온다.
+	 *
+	 * @param string $url iCal 주소
+	 * @return object[] $events
+	 */
+	function getICal($url,$username=null,$password=null) {
+		REQUIRE_ONCE $this->getModule()->getPath().'/classes/iCal.class.php';
+		return new iCal($url,$username,$password);
 	}
 	
 	/**

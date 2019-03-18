@@ -1,6 +1,6 @@
 <?php
 /**
- * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodule.kr)
+ * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodules.io)
  * 
  * 모달창을 가져온다.
  *
@@ -14,10 +14,10 @@ if (defined('__IM__') == false) exit;
 
 $modal = Request('modal');
 
-if ($modal == 'add') {
+if ($modal == 'write') {
 	$cid = Request('cid');
 	
-	if ($this->checkPermission($cid,'add') == false) {
+	if ($this->checkPermission($cid,0,'write') == false) {
 		$results->success = false;
 		$results->message = $this->getErrorText('FORBIDDEN');
 		return;
@@ -27,7 +27,7 @@ if ($modal == 'add') {
 	$end = strtotime(Request('end'));
 	
 	$results->success = true;
-	$results->modalHtml = $this->getAddModal($cid,$start,$end);
+	$results->modalHtml = $this->getEventWriteModal($cid,$start,$end);
 }
 
 if ($modal == 'view') {

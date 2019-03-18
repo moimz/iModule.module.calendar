@@ -1,5 +1,5 @@
 /**
- * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodule.kr)
+ * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodules.io)
  *
  * 캘린더 기본 스타일시트
  * FullCalendar v3.9.0 의 기본스타일 시트 참조(@see https://fullcalendar.io/)
@@ -276,25 +276,36 @@ div[data-module=calendar] .fc-list-empty-wrap1 {width:100%; height:100%; display
 div[data-module=calendar] .fc-list-empty {display:table-cell; vertical-align:middle; text-align:center;}
 div[data-module=calendar] .fc-unthemed .fc-list-empty {background-color:#eee;}
 
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] {display:table; width:100%; table-layout:fixed;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div {display:table-cell; border-left:5px solid transparent;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div:first-child {border-left:0;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=help] {display:table-caption; caption-side:bottom; margin-top:5px; margin-left:0px; margin-bottom:5px; border-left:0;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset].label > div[data-role=help] {padding-left:75px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] {display:table; width:100%; table-layout:fixed;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div {display:table-cell; border-left:5px solid transparent;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div:first-child {border-left:0;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=help] {display:table-caption; caption-side:bottom; margin-top:5px; margin-left:0px; margin-bottom:5px; border-left:0;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset].label > div[data-role=help] {padding-left:75px;}
 
-div[data-module=calendar][data-role=schedule] > div.line {margin-top:20px; border-top:1px dotted #ccc; height:20px; text-align:center;}
-div[data-module=calendar][data-role=schedule] > div.line > span {display:inline-block; height:20px; line-height:20px; color:#666; padding:0px 8px; margin:0 auto; top:-9px; position:relative; background:#fff;}
+div[data-module=calendar][data-role=write] > div.line {margin-top:20px; border-top:1px dotted #ccc; height:10px; text-align:center;}
+div[data-module=calendar][data-role=write] > div.line > span {display:inline-block; height:20px; line-height:20px; color:#666; padding:0px 8px; margin:0 auto; top:-9px; position:relative; background:#fff; font-size:14px;}
 
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input] {width:100%;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].color {width:40px;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].color > i[data-role=color] {width:40px; height:40px; display:block; box-sizing:border-box; border:1px solid rgba(0,0,0,0.15);}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=category] {width:120px;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].label {width:65px; padding-right:5px; font-weight:bold; text-align:right;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].repeat_end_date {width:100%;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=start_date] {width:150px;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=end_date] {width:150px;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=repeat] {width:150px;}
-div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=repeat_end_date] {width:150px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input] {width:100%;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=category] {width:70px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=category] > button > span {font-size:0; color:transparent;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=category] > ul {left:auto; right:0; width:140px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=text].label {width:65px; padding-right:5px; font-weight:bold; text-align:right;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=text].repeat_end_date {width:100%;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=start_date] {width:150px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=end_date] {width:150px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset][data-name=repeat_interval] {padding-left:75px;}
+div[data-module=calendar][data-role=write] > div[data-role=inputset][data-name=repeat_interval] > div[data-role=input] {width:100px;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] {padding-left:75px;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul {list-style:none; display:block; width:100%; box-sizing:border-box; font-size:0; padding:6px 0px 5px 1px;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul > li {display:inline-block; width:14.28571428%; height:39px; position:relative; z-index:0; vertical-align:middle;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul > li > button {width:calc(100% + 1px); height:40px; border:1px solid #e1e1e1; background:#fff; font-size:12px; color:#666; text-align:center; line-height:38px; position:absolute; top:-1px; left:-1px; cursor:pointer;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul > li.on {z-index:1;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul > li.on > button {border-color:#66afe9; background:#7ec2f9; color:#fff;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule][data-rule=MONTHLY] {padding-top:5px;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule][data-rule=YEARLY] > ul > li {width:16.6666%;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > div[data-role=inputset] {margin-left:-5px; width:calc(100% + 5px);}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > ul + div[data-role=inputset] {margin-top:5px;}
+div[data-module=calendar][data-role=write] > div[data-role=repeat_rule] > div[data-role=inputset] > div[data-role=input] {width:calc(50% - 5px); display:inline-block; vertical-align:middle; margin-top:0px; margin-left:5px;}
 
 div[data-module=calendar][data-role=view] > div.category {height:30px; line-height:30px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
 div[data-module=calendar][data-role=view] > div.category > i {display:inline-block; vertical-align:middle; width:16px; height:16px; border:1px solid rgba(0,0,0,0.15); box-sizing:border-box; margin:7px 5px 7px 0px;}
@@ -322,18 +333,18 @@ div[data-module=calendar][data-role=view] > div.repeat {margin-top:10px; border-
 }
 
 @media (max-width:520px) {
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] {display:block;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div {display:inline-block; vertical-align:middle; margin-top:0; margin-left:0; border-left:0;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=help] {display:block; width:100%; box-sizing:border-box;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset].label > div[data-role=help] {padding-left:70px;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].color {padding-right:5px; padding-top:5px;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=category] {width:calc(100% - 45px); padding-top:5px;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=is_allday] {width:calc(100% - 75px);}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=start_date] {width:135px; border-right:5px solid transparent;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=start_time] {width:calc(100% - 215px);}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=end_date] {width:135px; border-right:5px solid transparent;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=end_time] {width:calc(100% - 215px);}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=repeat] {width:calc(100% - 75px);}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=text].repeat_end_date {width:65px; border-left:0; padding-top:5px;}
-	div[data-module=calendar][data-role=schedule] > div[data-role=inputset] > div[data-role=input][data-name=repeat_end_date] {width:calc(100% - 75px); border-top:5px solid transparent;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] {display:block;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div {display:inline-block; vertical-align:middle; margin-top:0; margin-left:0; border-left:0;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=help] {display:block; width:100%; box-sizing:border-box;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset].label > div[data-role=help] {padding-left:70px;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=text].color {padding-right:5px; padding-top:5px;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=category] {width:calc(100% - 45px); padding-top:5px;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=is_allday] {width:calc(100% - 75px);}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=start_date] {width:135px; border-right:5px solid transparent;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=start_time] {width:calc(100% - 215px);}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=end_date] {width:135px; border-right:5px solid transparent;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=end_time] {width:calc(100% - 215px);}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=repeat] {width:calc(100% - 75px);}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=text].repeat_end_date {width:65px; border-left:0; padding-top:5px;}
+	div[data-module=calendar][data-role=write] > div[data-role=inputset] > div[data-role=input][data-name=repeat_end_date] {width:calc(100% - 75px); border-top:5px solid transparent;}
 }

@@ -1,5 +1,5 @@
 /**
- * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodule.kr)
+ * 이 파일은 iModule 캘린더모듈의 일부입니다. (https://www.imodules.io)
  *
  * 캘린더 UI 를 구성한다.
  * 
@@ -47,26 +47,26 @@ var Calendar = {
 					add:{
 						text:"일정추가",
 						click:function() {
-							Calendar.add(moment().format("YYYY-MM-DD"),moment().add(1,"day").format("YYYY-MM-DD"));
+							Calendar.write(moment().format("YYYY-MM-DD"),moment().add(1,"day").format("YYYY-MM-DD"));
 						}
 					}
 				},
 				header:{
 					left:"prev,next today",
 					center:"prev title next",
-					right:$calendar.attr("data-editable") == "TRUE" ? "month,agendaWeek,agendaDay add" : "month,agendaWeek,agendaDay"
+					right:$calendar.attr("data-writable") == "TRUE" ? "month,agendaWeek,agendaDay add" : "month,agendaWeek,agendaDay"
 				},
 				timezone:"local",
 				defaultView:views[view],
 				defaultDate:defaultDate,
-				editable:$calendar.attr("data-editable") == "TRUE",
+				editable:$calendar.attr("data-writable") == "TRUE" || $calendar.attr("data-editable") == "TRUE",
 				selectable:$calendar.attr("data-selectable") == "TRUE",
 				displayEventEnd:false,
 				handleWindowResize:false,
 				contentHeight:"auto",
 				eventSources:[{
 					events:function(start,end,timezone,callback) {
-						$.send(ENV.getProcessUrl("calendar","getSchedules"),{cid:$context.attr("data-cid"),start:start.format("YYYY-MM-DD"),end:end.format("YYYY-MM-DD")},function(result) {
+						$.send(ENV.getProcessUrl("calendar","getEvents"),{cid:$context.attr("data-cid"),start:start.format("YYYY-MM-DD"),end:end.format("YYYY-MM-DD")},function(result) {
 							var events = [];
 							if (result.success == true) {
 								events = result.events;
@@ -88,7 +88,7 @@ var Calendar = {
 					Calendar.updateDuration(event,revert);
 				},
 				select:function(start,end) {
-					Calendar.add(start.format("YYYY-MM-DD HH:mm:ss"),end.format("YYYY-MM-DD HH:mm:ss"));
+					Calendar.write(start.format("YYYY-MM-DD HH:mm:ss"),end.format("YYYY-MM-DD HH:mm:ss"));
 				},
 				viewRender:function(calendar) {
 					var views = {"month":"month","agendaWeek":"week","agendaDay":"day"};
@@ -130,16 +130,16 @@ var Calendar = {
 			});
 		}
 	},
-	add:function(start,end) {
+	write:function(start,end) {
 		var $context = $("#ModuleCalendarContext");
 		var $calendar = $("div[data-role=calendar]",$context);
 		var cid = $context.attr("data-cid");
 		
-		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"add",cid:cid,start:start,end:end},function($modal,$form) {
+		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"write",cid:cid,start:start,end:end},function($modal,$form) {
 			var $category = $("select[name=category]",$form);
 			$category.on("change",function() {
 				var $selected = $("option:selected",$(this));
-				$("i[data-role=color]",$form).css("background",$selected.attr("data-color"));
+				$("div[data-role=input][data-name=category] > button > span",$form).css("background",$selected.attr("data-color"));
 			});
 			$category.triggerHandler("change");
 			
@@ -155,24 +155,68 @@ var Calendar = {
 			
 			var $repeat = $("select[name=repeat]",$form);
 			$repeat.on("change",function() {
+				$("div[data-role=repeat_rule]",$form).hide();
 				if ($(this).val() == "NONE") {
-					$("input[name=repeat_end_date]",$form).disable();
+					$("div[data-role=inputset][data-name=repeat_interval]",$form).hide();
 				} else {
-					$("input[name=repeat_end_date]",$form).enable();
-					if ($("input[name=repeat_end_date]",$form).val()) return;
+					$("div[data-role=repeat_rule][data-rule="+$(this).val()+"]",$form).show();
+					var $text = $("div[data-role=inputset][data-name=repeat_interval] > div[data-role=text]",$form);
+					$text.html($text.attr("data-" + $(this).val().toLowerCase()));
+					$("div[data-role=inputset][data-name=repeat_interval]",$form).show();
 					
-					var start_date = moment($("input[name=start_date]",$form).val() ? $("input[name=start_date]",$form).val() : moment().format("YYYY-MM-DD"));
-					if (start_date == "ANNUALLY") {
-						$("input[name=repeat_end_date]",$form).val(start_date.add(10,"year").format("YYYY-MM-DD"));
-					} else {
-						$("input[name=repeat_end_date]",$form).val(start_date.add(1,"year").format("YYYY-MM-DD"));
+					if ($(this).val() == "WEEKLY") {
+						if ($("div[data-role=repeat_rule][data-rule=WEEKLY] > ul > li.on",$form).length == 0) {
+							var start = moment($("input[name=start_date]",$form).val());
+							$("div[data-role=repeat_rule][data-rule=WEEKLY] > ul > li",$form).eq(start.day()).addClass("on");
+						}
+					}
+					
+					if ($(this).val() == "MONTHLY") {
+						$("select[name=repeat_rule_type]",$form).triggerHandler("change");
+					}
+					
+					if ($(this).val() == "YEARLY") {
+						if ($("div[data-role=repeat_rule][data-rule=YEARLY] > ul > li.on",$form).length == 0) {
+							var start = moment($("input[name=start_date]",$form).val());
+							$("div[data-role=repeat_rule][data-rule=YEARLY] > ul > li > button[data-value="+(start.month() + 1)+"]",$form).parent().addClass("on");
+						}
+						$("input[name=repeat_rule_apply]",$form).triggerHandler("change");
 					}
 				}
+				iModule.modal.set();
 			});
 			$repeat.triggerHandler("change");
 			
+			$("select[name=repeat_rule_type]",$form).on("change",function() {
+				if ($(this).val() == "date") {
+					$("div[data-role=repeat_rule][data-rule=MONTHLY] > ul",$form).show();
+					$("div[data-role=repeat_rule][data-rule=MONTHLY] > div[data-role=inputset]",$form).hide();
+					
+					if ($("div[data-role=repeat_rule][data-rule=MONTHLY] > ul > li.on",$form).length == 0) {
+						var start = moment($("input[name=start_date]",$form).val());
+						$("div[data-role=repeat_rule][data-rule=MONTHLY] > ul > li > button[data-value="+start.date()+"]").parent().addClass("on");
+					}
+				} else {
+					$("div[data-role=repeat_rule][data-rule=MONTHLY] > ul",$form).hide();
+					$("div[data-role=repeat_rule][data-rule=MONTHLY] > div[data-role=inputset]",$form).show();
+				}
+			});
+			
+			$("input[name=repeat_rule_apply]",$form).on("change",function() {
+				if ($(this).checked() == true) {
+					$("div[data-role=repeat_rule][data-rule=YEARLY] > div[data-role=inputset] > div[data-role=input] > select").enable();
+				} else {
+					$("div[data-role=repeat_rule][data-rule=YEARLY] > div[data-role=inputset] > div[data-role=input] > select").disable();
+				}
+			});
+			
+			var $repeat_rule = $("div[data-role=repeat_rule]",$form);
+			$("button",$repeat_rule).on("click",function() {
+				$(this).parent().toggleClass("on");
+			});
+			
 			$form.on("submit",function() {
-				$form.send(ENV.getProcessUrl("calendar","saveSchedule"),function(result) {
+				$form.send(ENV.getProcessUrl("calendar","saveEvent"),function(result) {
 					if (result.success == true) {
 						$calendar.fullCalendar("refetchEvents");
 						iModule.modal.close();
@@ -270,7 +314,7 @@ var Calendar = {
 			});
 			
 			$form.on("submit",function() {
-				$form.send(ENV.getProcessUrl("calendar","saveSchedule"),function(result) {
+				$form.send(ENV.getProcessUrl("calendar","saveEvent"),function(result) {
 					if (result.success == true) {
 						$calendar.fullCalendar("refetchEvents");
 						iModule.modal.close();
@@ -309,7 +353,7 @@ var Calendar = {
 	updateDuration:function(event,revert) {
 		if (!event.is_module) return revert();
 		
-		if (event.is_repeat == true) {
+		if (event.is_recurrence == true) {
 			iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"duration",idx:event.id,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function($modal,$form) {
 				$modal.on("close",function() {
 					var $context = $("#ModuleCalendarContext");
