@@ -43,7 +43,7 @@
 					"is_null":true,
 					"comment":"템플릿설정"
 				},
-				"schedule":{
+				"event":{
 					"type":"int",
 					"length":11,
 					"default":0,
@@ -98,6 +98,12 @@
 					"type":"int",
 					"length":11,
 					"comment":"정렬순서"
+				},
+				"event":{
+					"type":"int",
+					"length":11,
+					"default":0,
+					"comment":"이벤트수"
 				},
 				"latest_update":{
 					"type":"int",
@@ -169,6 +175,11 @@
 					"type":"varchar",
 					"length":100,
 					"comment":"반복조건"
+				},
+				"location":{
+					"type":"varchar",
+					"length":255,
+					"comment":"위치"
 				},
 				"url":{
 					"type":"varchar",

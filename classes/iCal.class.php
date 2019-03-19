@@ -20,6 +20,7 @@ class iCal {
 	const SECONDS_IN_A_WEEK = 604800;
 	const UNIX_FORMAT = 'U';
 	
+	private $rawData = null;
 	private $defaultSpan = 2;
 	private $cal;
 	private $lastKeyword;
@@ -63,23 +64,36 @@ class iCal {
 		12 => 'December',
 	);
 	
-	function __construct($url=null,$username=null,$password=null) {
+	function __construct($url=null) {
 		$this->defaultTimeZone = date_default_timezone_get();
 		
 		if ($url != null) {
 			$ch = curl_init($url);
-			if ($username != null && $password != null) {
-				curl_setopt($ch,CURLOPT_USERPWD,$username.':'.$password);
-			}
 			curl_setopt($ch,CURLOPT_TIMEOUT,30);
 			curl_setopt($ch,CURLOPT_RETURNTRANSFER,TRUE);
 			curl_setopt($ch,CURLOPT_FOLLOWLOCATION,true);
-			$data = curl_exec($ch);
+			$this->rawData = curl_exec($ch);
 			curl_close($ch);
 			
-			$lines = array_filter(explode("\n",$data));
+			$lines = array_filter(explode("\n",$this->rawData));
 			$this->initLines($lines);
 		}
+	}
+	
+	/**
+	 * RAW 데이터를 가져온다.
+	 */
+	function getRawData() {
+		return $this->rawData;
+	}
+	
+	/**
+	 * RAW 데이터를 지정한다.
+	 */
+	function setRawData($rawData) {
+		$this->rawData = $rawData;
+		$lines = array_filter(explode("\n",$this->rawData));
+		$this->initLines($lines);
 	}
 	
 	/**

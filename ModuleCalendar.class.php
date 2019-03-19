@@ -389,6 +389,7 @@ class ModuleCalendar {
 		$this->IM->addHeadResource('style',$this->getModule()->getDir().'/styles/style.css');
 		$this->IM->addHeadResource('script',$this->getModule()->getDir().'/scripts/script.js');
 		$this->IM->addHeadResource('script',$this->getModule()->getDir().'/scripts/fullcalendar.min.js');
+		$this->IM->addHeadResource('script',$this->getModule()->getDir().'/scripts/clipboard.min.js');
 		
 		if (is_file($this->getModule()->getPath().'/scripts/locale/'.$this->IM->getLanguage().'.js') == true) {
 			$this->IM->addHeadResource('script',$this->getModule()->getDir().'/scripts/locale/'.$this->IM->getLanguage().'.js');
@@ -422,15 +423,103 @@ class ModuleCalendar {
 	/**
 	 * 모듈 외부컨테이너를 가져온다.
 	 *
-	 * @param string $cid 캘린더 아이디
+	 * @param string $container 컨테이너명
 	 * @return string $html 컨텍스트 HTML
 	 */
 	function getContainer($container) {
-		$this->IM->addHeadResource('style',$this->getModule()->getDir().'/styles/container.css');
+		if ($container == 'ical') {
+			$cid = $this->getView();
+			$category = $this->getIdx();
+			
+			$calendar = $this->getCalendar($cid);
+			$category = $this->getCategory($category);
+			if ($calendar == null || $category == null) {
+				header('HTTP/1.1 404 Not Found');
+				exit;
+			}
+			
+			if ($this->checkPermission($cid,$category->idx,'view') == false) {
+				header('HTTP/1.1 403 Forbidden');
+				exit;
+			}
+			
+			$ics = array();
+			$ics[] = 'BEGIN:VCALENDAR';
+			$ics[] = 'VERSION:2.0';
+			$ics[] = 'X-WR-CALNAME:'.$category->title;
+			
+			$events = $this->db()->select($this->table->event)->where('cid',$cid)->where('category',$category->idx)->orderBy('latest_update','desc')->get();
+			foreach ($events as $event) {
+				$ics[] = 'BEGIN:VEVENT';
+				$ics[] = 'CREATED:'.gmdate('Ymd\THis\Z',$event->reg_date);
+				$ics[] = 'UID:'.$event->uid;
+				
+				if ($event->is_allday == 'TRUE') {
+					$ics[] = 'DTSTART;VALUE=DATE:'.date('Ymd',$event->start_time);
+					$ics[] = 'DTEND;VALUE=DATE:'.date('Ymd',$event->end_time);
+				} else {
+					$ics[] = 'DTSTART;TZID='.date_default_timezone_get().':'.date('Ymd\THis',$event->start_time);
+					$ics[] = 'DTEND;TZID='.date_default_timezone_get().':'.date('Ymd\THis',$event->end_time);
+				}
+				$ics[] = 'SUMMARY:'.$event->summary;
+				$ics[] = 'LAST-MODIFIED:'.gmdate('Ymd\THis\Z',$event->latest_update);
+				$ics[] = 'DTSTAMP:'.gmdate('Ymd\THis\Z');
+				$ics[] = 'SEQUENCE:'.$event->sequence;
+				$ics[] = 'X-IMODULE-AUTHOR:'.Encoder($event->midx);
+				if ($event->location) $ics[] = 'LOCATION:'.$event->location;
+				if ($event->description) $ics[] = 'DESCRIPTION:'.$event->description;
+				if ($event->url) $ics[] = 'URL;VALUE=URI:'.$event->url;
+				$ics[] = 'END:VEVENT';
+			}
+			$ics[] = 'END:VCALENDAR';
+			
+			for ($i=0, $loop=count($ics);$i<$loop;$i++) {
+				$line = preg_match('/^(.*?):(.*)/',$ics[$i],$match);
+				$preamble = $match[1];
+				$value = $match[2];
+				
+				if (in_array($preamble,array('X-WR-CALNAME','SUMMARY','LOCATION','DESCRIPTION','URL;VALUE=URI')) == false) continue;
+				
+				$value = trim($value);
+				$value = strip_tags($value);
+				$value = preg_replace('/\n+/', ' ', $value);
+				$value = preg_replace('/\s{2,}/', ' ', $value);
+				$preamble_len = strlen($preamble);
+				$lines = array();
+				while (strlen($value)>(75-$preamble_len)) {
+					$space = (75-$preamble_len);
+					$mbcc = $space;
+					while ($mbcc) {
+						$line = mb_substr($value, 0, $mbcc);
+						$oct = strlen($line);
+						if ($oct > $space) {
+							$mbcc -= $oct-$space;
+						} else {
+							$lines[] = $line;
+							$preamble_len = 1;
+							$value = mb_substr($value, $mbcc);
+							break;
+						}
+					}
+				}
+				
+				if (!empty($value)) {
+					$lines[] = $value;
+				}
+				
+				$ics[$i] = $preamble.':'.join($lines,"\r\n\t");
+			}
+			
+			header("Content-type: text; charset=utf-8");
+//			header("Content-type: text/calendar; charset=utf-8");
+//			header("Content-Disposition: attachment; filename=ical.ics");
+			exit(implode("\r\n",$ics));
+		}
 		
-		$html = $this->getContext($cid);
+		$html = $this->getContext($container);
 		
-		$this->IM->removeTemplet();
+		$this->IM->addHeadResource('style',$this->getModule()->getDir().'/styles/container.css.php');
+		
 		$footer = $this->IM->getFooter();
 		$header = $this->IM->getHeader();
 		
@@ -521,6 +610,46 @@ class ModuleCalendar {
 	}
 	
 	/**
+	 * 이벤트를 구독 URL 을 확인하는 모달을 가져온다.
+	 *
+	 * @param string $cid 캘린더아이디
+	 * @return string $html 모달 HTML
+	 */
+	function getShareModal($cid) {
+		$categories = $this->db()->select($this->table->category)->where('cid',$cid)->orderBy('sort','asc')->get();
+		
+		$title = '캘린더 구독하기';
+		
+		$content = '<div data-role="input" style="display:none;"><input></div>';
+		$content.= '<div data-module="calendar" data-role="share">';
+		foreach ($categories as $category) {
+			$content.= '<label><i class="color" style="background:'.$category->color.';"></i>'.$category->title.'</label>';
+			$content.= '<div class="input">';
+			
+			if ($category->ical) {
+				$url = $category->ical;
+			} else {
+				$url = $this->IM->getModuleUrl('calendar','ical',$cid,$category->idx,true);
+			}
+			
+			$content.= '<input type="text" value="'.$url.'">';
+			$content.= '<span><button type="button" data-action="clipboard" data-clipboard-text="'.$url.'"><i></i></button></span>';
+			$content.= '</div>';
+		}
+		
+		$content.= '<div data-role="message">이벤트 분류별로 캘린더를 구독할 수 있습니다.<br>iCal 을 지원하는 외부서비스(구글/네이버 등)나, PC 또는 모바일 기기의 캘린더 프로그램에서 구독할 수 있습니다.</div>';
+		
+		$buttons = array();
+		
+		$button = new stdClass();
+		$button->type = 'submit';
+		$button->text = '닫기';
+		$buttons[] = $button;
+		
+		return $this->getTemplet()->getModal($title,$content,true,array('width'=>400),$buttons);
+	}
+	
+	/**
 	 * 일정을 추가하는 모달을 가져온다.
 	 *
 	 * @param string $cid 캘린더아이디
@@ -543,7 +672,7 @@ class ModuleCalendar {
 		
 		$content.= '<div data-module="calendar" data-role="write">';
 		$content.= '<div data-role="inputset">';
-		$content.= '<div data-role="input"><input type="text" name="title" placeholder="일정명"></div>';
+		$content.= '<div data-role="input"><input type="text" name="summary" placeholder="일정명"></div>';
 		$content.= '<div data-role="input"><select name="category">';
 		$categories = $this->db()->select($this->table->category)->where('cid',$cid)->orderBy('sort','asc')->get();
 		foreach ($categories as $category) {
@@ -644,8 +773,6 @@ class ModuleCalendar {
 //		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
 //		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD"></div>';
 //		$content.= '</div>';
-		
-		
 		
 		$content.= '</div>';
 		
@@ -827,65 +954,61 @@ class ModuleCalendar {
 	/**
 	 * 일정 상세보기 모달을 가져온다.
 	 *
-	 * @param string $idx 일정고유번호
+	 * @param object $event 이벤트객체
 	 * @return string $html 모달 HTML
 	 */
-	function getViewModal($idx) {
-		$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-		if ($schedule == null) return '';
+	function getEventViewModal($event) {
+		if ($event == null) return '';
 		
-		$category = $this->db()->select($this->table->category)->where('idx',$schedule->category)->getOne();
-		$title = GetString($schedule->title,'replace');
+		$category = $this->getCategory($event->category);
+		$title = GetString($event->summary,'replace');
 		
-		$content = '<input type="hidden" name="idx" value="'.$idx.'">';
+		$content = '<input type="hidden" name="uid" value="'.$event->uid.'">';
+		$content.= '<input type="hidden" name="rid" value="'.$event->rid.'">';
 		
 		$content.= '<div data-module="calendar" data-role="view">';
 		$content.= '<div class="category"><i style="background:'.$category->color.'"></i>'.$category->title.'</div>';
 		$content.= '<div class="date">';
-		if ($schedule->is_allday == 'TRUE') {
-			$content.= GetTime('Y.m.d(D)',$schedule->start_time);
-			if (date('Ymd',$schedule->start_time) != date('Ymd',$schedule->end_time - 1)) {
-				$content.= ' ~ '.GetTime('Y.m.d(D)',$schedule->end_time - 1);
+		
+		if ($event->is_allday == true || (date('H:i:s',$event->start_time) == date('H:i:s',$event->end_time) && date('H:i:s',$event->start_time) == '00:00:00')) {
+			$content.= GetTime('Y.m.d(D)',$event->start_time);
+			if (date('Ymd',$event->start_time) != date('Ymd',$event->end_time - 1)) {
+				$content.= ' ~ '.GetTime('Y.m.d(D)',$event->end_time - 1);
 			}
 		} else {
-			$content.= GetTime('Y.m.d(D) H:i',$schedule->start_time);
-			if (date('Ymd',$schedule->start_time) != date('Ymd',$schedule->end_time - 1)) {
-				$content.= ' ~ '.GetTime('Y.m.d(D) H:i',$schedule->end_time);
+			$content.= GetTime('Y.m.d(D) H:i',$event->start_time);
+			if (date('Ymd',$event->start_time) != date('Ymd',$event->end_time - 1)) {
+				$content.= ' ~ '.GetTime('Y.m.d(D) H:i',$event->end_time);
 			} else {
-				$content.= ' ~ '.GetTime('H:i',$schedule->end_time);
+				$content.= ' ~ '.GetTime('H:i',$event->end_time);
 			}
 		}
 		$content.= '</div>';
 		
-		$member = $this->IM->getModule('member')->getMember($schedule->midx);
-		$content.= '<div class="author">'.$this->IM->getModule('member')->getMemberPhoto($schedule->midx).$this->IM->getModule('member')->getMemberNickname($schedule->midx,true,'Unknown').'</div>';
+		if ($event->description) {
+			$content.= '<div class="description">'.$event->description.'</div>';
+		}
 		
-		if ($schedule->repeat != 'NONE') {
-			$repeat = $this->db()->select($this->table->schedule)->where('idx',$schedule->repeat_idx)->getOne();
+		if ($event->location || $event->url) {
+			$content.= '<ul class="detail">';
 			
-			if ($repeat->repeat == 'DAILY') {
-				$repeat_start_type = $repeat->is_allday == 'TRUE' ? '' : date('H:i',$repeat->start_time);
-			} elseif ($repeat->repeat == 'WEEKLY') {
-				$repeat_start_type = GetTime('l',$repeat->start_time);
-			} elseif ($repeat->repeat == 'MONTHLY') {
-				$repeat_start_type = str_replace('{DATE}',date('d',$repeat->start_time),$this->getText('text/date'));
-			} elseif ($repeat->repeat == 'MONTHLY_END') {
-				$repeat_start_type = '';
-			} elseif ($repeat->repeat == 'ANNUALLY') {
-				$repeat_start_type = str_replace('{MONTH}',date('m',$repeat->start_time),$this->getText('text/month')).' '.str_replace('{DATE}',date('d',$repeat->start_time),$this->getText('text/date'));
-			}
+			if ($event->url) $content.= '<li><i class="xi xi-clip"></i><span><a href="'.$event->url.'" target="_blank">'.$event->url.'</a></span></li>';
+			if ($event->location) $content.= '<li><i class="xi xi-map-marker"></i><span>'.$event->location.'</span></li>';
 			
-			$content.= '<div class="repeat">';
-			$content.= str_replace(array('{REPEAT_START_DATE}','{REPEAT_END_DATE}','{REPEAT_TYPE}','{REPEAT_START_TYPE}'),array(GetTime('Y.m.d(D)',$repeat->start_time),GetTime('Y.m.d(D)',$repeat->repeat_end_date - 1),$this->getText('repeat_type/'.$repeat->repeat),$repeat_start_type),$this->getText('text/repeat_text'));
-			$content.= '</div>';
+			$content.= '</ul>';
+		}
+		
+		if ($event->midx > 0) {
+			$member = $this->IM->getModule('member')->getMember($event->midx);
+			$content.= '<div class="author">'.$this->IM->getModule('member')->getMemberPhoto($event->midx).$this->IM->getModule('member')->getMemberNickname($event->midx,true,'Unknown').'</div>';
 		}
 		$content.= '</div>';
 		
 		$buttons = array();
 		
-		if ($schedule->midx == $this->IM->getModule('member')->getLogged() || $this->checkPermission($schedule->cid,'modify') == true) {
+		if (($event->midx != 0 && $event->midx == $this->IM->getModule('member')->getLogged()) || $this->checkPermission($event->cid,$event->category,'edit') == true) {
 			$button = new stdClass();
-			$button->type = 'modify';
+			$button->type = 'edit';
 			$button->text = '수정';
 			$buttons[] = $button;
 			
@@ -926,6 +1049,91 @@ class ModuleCalendar {
 	}
 	
 	/**
+	 * 카테고리정보를 가져온다.
+	 *
+	 * @param int $idx 카테고리 고유값
+	 * @return object $category
+	 */
+	function getCategory($idx) {
+		$category = $this->db()->select($this->table->category)->where('idx',$idx)->getOne();
+		if ($category == null) return null;
+		
+		return $category;
+	}
+	
+	/**
+	 * 이벤트를 가져온다.
+	 *
+	 * @param string $cid 캘린더아이디
+	 * @param string $category 카테고리고유값
+	 * @param int $start_time 기간(시작)
+	 * @param int $end_time 기간(종료)
+	 * @return object[] $events
+	 */
+	function getEvents($cid,$category,$start_time,$end_time) {
+		$calendar = $this->getCalendar($cid);
+		if ($calendar == null) return null;
+		$category = $this->getCategory($category);
+		if ($category == null) return null;
+		if ($this->checkPermission($cid,$category->idx,'view') == false) return array();
+		
+		REQUIRE_ONCE $this->getModule()->getPath().'/classes/iCal.class.php';
+		
+		if ($category->ical) {
+			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < time() - 3600) {
+				$iCal = new iCal($category->ical);
+				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
+			} else {
+				$iCal = new iCal();
+				$iCal->setRawData($this->IM->cache()->get('module','calendar',$cid.'@'.$category->idx));
+			}
+		} else {
+			if (true || $this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < $category->latest_update) {
+				$iCal = new iCal($this->IM->getModuleUrl('calendar','ical',$cid,$category->idx,true));
+				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
+			} else {
+				$iCal = new iCal();
+				$iCal->setRawData($this->IM->cache()->get('module','calendar',$cid.'@'.$category->idx));
+			}
+		}
+		
+		$editable = $this->checkPermission($cid,$category->idx,'edit');
+		
+		$events = array();
+		foreach ($iCal->getEvents($start_time,$end_time) as $data) {
+			$event = new stdClass();
+			$event->id = $data->uid.(isset($data->recurrence_id) == true ? '@'.$data->recurrence_id : '');
+			$event->title = $data->summary;
+			$event->start = date('c',strtotime($data->dtstart));
+			$event->end = date('c',strtotime($data->dtend));
+			$event->allDay = strlen($data->dtstart) == 8 && strlen($data->dtend);
+			$event->backgroundColor = $category->color;
+			$event->is_recurrence = isset($data->recurrence_id) == true;
+			$event->editable = $editable;
+			$event->source = $category->ical ? $category->ical : null;
+			
+			$event->data = new stdClass();
+			$event->data->cid = $cid;
+			$event->data->uid = $data->uid;
+			$event->data->rid = isset($data->recurrence_id) == true ? $data->recurrence_id : null;
+			$event->data->category = $category->idx;
+			$event->data->summary = $data->summary;
+			$event->data->start_time = strtotime($data->dtstart);
+			$event->data->end_time = strtotime($data->dtend);
+			$event->data->midx = isset($data->x_imodule_author) == true ? intval(Decoder($data->x_imodule_author)) : 0;
+			$event->data->url = isset($data->url) == true ? $data->url : null;
+			$event->data->description = isset($data->description) == true ? $data->description : null;
+			$event->data->location = isset($data->location) == true ? $data->location : null;
+			$event->data->is_allday = $event->allDay;
+			
+			$event->origin = $data;
+			$events[] = $event;
+		}
+		
+		return $events;
+	}
+	
+	/**
 	 * 권한을 확인한다.
 	 *
 	 * @param string $cid 캘린더아이디
@@ -952,19 +1160,22 @@ class ModuleCalendar {
 	 * @param string $cid 캘린더아이디
 	 */
 	function updateCalendar($cid) {
-		$total = $this->db()->select($this->table->schedule)->where('cid',$cid)->count();
-		$this->db()->update($this->table->calendar,array('schedule'=>$total))->where('cid',$cid)->execute();
+		$status = $this->db()->select($this->table->category,'sum(event) as event, max(latest_update) as latest_update')->where('cid',$cid)->getOne();
+		$event = $status->event ? $status->event : 0;
+		$latest_update = $status->latest_update ? $status->latest_update : 0;
+		$this->db()->update($this->table->calendar,array('event'=>$event,'latest_update'=>$latest_update))->where('cid',$cid)->execute();
 	}
 	
 	/**
-	 * iCal 이벤트를 가져온다.
+	 * 캘린더 정보를 업데이트한다.
 	 *
-	 * @param string $url iCal 주소
-	 * @return object[] $events
+	 * @param string $cid 캘린더아이디
 	 */
-	function getICal($url,$username=null,$password=null) {
-		REQUIRE_ONCE $this->getModule()->getPath().'/classes/iCal.class.php';
-		return new iCal($url,$username,$password);
+	function updateCategory($category) {
+		$status = $this->db()->select($this->table->event,'count(*) as event, max(latest_update) as latest_update')->where('category',$category)->getOne();
+		$event = $status->event ? $status->event : 0;
+		$latest_update = $status->latest_update ? $status->latest_update : 0;
+		$this->db()->update($this->table->category,array('event'=>$event,'latest_update'=>$latest_update))->where('idx',$category)->execute();
 	}
 	
 	/**

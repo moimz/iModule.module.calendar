@@ -8,14 +8,13 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2018. 3. 18.
+ * @modified 2019. 3. 19.
  */
 if (defined('__IM__') == false) exit;
 
-$modal = Request('modal');
-
+$modal = Param('modal');
 if ($modal == 'write') {
-	$cid = Request('cid');
+	$cid = Param('cid');
 	
 	if ($this->checkPermission($cid,0,'write') == false) {
 		$results->success = false;
@@ -31,22 +30,21 @@ if ($modal == 'write') {
 }
 
 if ($modal == 'view') {
-	$idx = Request('idx');
-	$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-	if ($schedule == null) {
-		$results->success = false;
-		$results->message = $this->getErrorText('NOT_FOUND');
-		return;
-	}
-	
-	if ($schedule->midx != $this->IM->getModule('member')->getLogged() && $this->checkPermission($schedule->cid,'view') == false) {
+	$event = json_decode(Param('event'));
+	$results->success = $event != null;
+	if ($event != null) $results->modalHtml = $this->getEventViewModal($event);
+}
+
+if ($modal == 'share') {
+	$cid = Param('cid');
+	if ($this->checkPermission($cid,0,'view') == false) {
 		$results->success = false;
 		$results->message = $this->getErrorText('FORBIDDEN');
 		return;
 	}
 	
 	$results->success = true;
-	$results->modalHtml = $this->getViewModal($idx);
+	$results->modalHtml = $this->getShareModal($cid);
 }
 
 if ($modal == 'modify') {

@@ -44,17 +44,23 @@ var Calendar = {
 			
 			$calendar.fullCalendar({
 				customButtons:{
-					add:{
+					write:{
 						text:"일정추가",
 						click:function() {
 							Calendar.write(moment().format("YYYY-MM-DD"),moment().add(1,"day").format("YYYY-MM-DD"));
+						}
+					},
+					share:{
+						text:"구독",
+						click:function() {
+							Calendar.share();
 						}
 					}
 				},
 				header:{
 					left:"prev,next today",
 					center:"prev title next",
-					right:$calendar.attr("data-writable") == "TRUE" ? "month,agendaWeek,agendaDay add" : "month,agendaWeek,agendaDay"
+					right:$calendar.attr("data-writable") == "TRUE" ? "month,agendaWeek,agendaDay write share" : "month,agendaWeek,agendaDay share"
 				},
 				timezone:"local",
 				defaultView:views[view],
@@ -78,7 +84,7 @@ var Calendar = {
 				}],
 				eventClick:function(event,e,view) {
 					$(this).addClass("opened");
-					Calendar.view(event.id);
+					Calendar.view(event.data);
 					e.stopPropagation();
 				},
 				eventDrop:function(event,delta,revert) {
@@ -230,11 +236,25 @@ var Calendar = {
 			$calendar.fullCalendar("unselect");
 		});
 	},
-	view:function(idx) {
+	share:function(start,end) {
+		var $context = $("#ModuleCalendarContext");
+		var $calendar = $("div[data-role=calendar]",$context);
+		var cid = $context.attr("data-cid");
+		
+		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"share",cid:cid},function($modal,$form) {
+			var clipboard = new ClipboardJS(document.querySelectorAll("button[data-action=clipboard]"),{
+				container:document.getElementById('iModuleModalForm')
+			});
+			clipboard.on("success",function() {
+				iModule.alert.show("success","iCal 주소가 클립보드에 복사되었습니다.");
+			});
+		});
+	},
+	view:function(event) {
 		var $context = $("#ModuleCalendarContext");
 		var $calendar = $("div[data-role=calendar]",$context);
 		
-		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"view",idx:idx},function($modal,$form) {
+		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"view",event:JSON.stringify(event)},function($modal,$form) {
 			$modal.on("close",function() {
 				var $context = $("#ModuleCalendarContext");
 				var $calendar = $("div[data-role=calendar]",$context);
@@ -351,10 +371,10 @@ var Calendar = {
 		});
 	},
 	updateDuration:function(event,revert) {
-		if (!event.is_module) return revert();
-		
+		console.log(event);
+		return;
 		if (event.is_recurrence == true) {
-			iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"duration",idx:event.id,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function($modal,$form) {
+			iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"duration",uid:event.uid,rid:event.rid,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function($modal,$form) {
 				$modal.on("close",function() {
 					var $context = $("#ModuleCalendarContext");
 					var $calendar = $("div[data-role=calendar]",$context);
