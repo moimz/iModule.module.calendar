@@ -47,42 +47,45 @@ if ($modal == 'share') {
 	$results->modalHtml = $this->getShareModal($cid);
 }
 
-if ($modal == 'modify') {
-	$idx = Request('idx');
-	$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-	if ($schedule == null) {
+if ($modal == 'edit') {
+	$uid = Param('uid');
+	$rid = Param('rid');
+	$event = $this->getEvent($uid,$rid);
+	
+	if ($event == null) {
 		$results->success = false;
 		$results->message = $this->getErrorText('NOT_FOUND');
 		return;
 	}
 	
-	if ($schedule->midx != $this->IM->getModule('member')->getLogged() && $this->checkPermission($schedule->cid,'modify') == false) {
+	if ($event->midx != $this->IM->getModule('member')->getLogged() && $this->checkPermission($event->cid,$event->category,'edit') == false) {
 		$results->success = false;
 		$results->message = $this->getErrorText('FORBIDDEN');
 		return;
 	}
 	
 	$results->success = true;
-	$results->modalHtml = $this->getModifyModal($idx);
+	$results->modalHtml = $this->getEventEditModal($event);
 }
 
 if ($modal == 'delete') {
-	$idx = Request('idx');
-	$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-	if ($schedule == null) {
+	$uid = Param('uid');
+	$rid = Param('rid');
+	$event = $this->getEvent($uid,$rid);
+	if ($event == null) {
 		$results->success = false;
 		$results->message = $this->getErrorText('NOT_FOUND');
 		return;
 	}
 	
-	if ($schedule->midx != $this->IM->getModule('member')->getLogged() && $this->checkPermission($schedule->cid,'delete') == false) {
+	if ($event->midx != $this->IM->getModule('member')->getLogged() && $this->checkPermission($event->cid,$event->category,'edit') == false) {
 		$results->success = false;
 		$results->message = $this->getErrorText('FORBIDDEN');
 		return;
 	}
 	
 	$results->success = true;
-	$results->modalHtml = $this->getDeleteModal($idx);
+	$results->modalHtml = $this->getEventDeleteModal($event);
 }
 
 if ($modal == 'duration') {

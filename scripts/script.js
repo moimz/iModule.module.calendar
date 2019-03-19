@@ -248,6 +248,10 @@ var Calendar = {
 			clipboard.on("success",function() {
 				iModule.alert.show("success","iCal 주소가 클립보드에 복사되었습니다.");
 			});
+			$("input",$form).on("focus",function(e) {
+				setTimeout(function($input) { $input.select(); },100,$(this));
+				e.stopImmediatePropagation();
+			});
 		});
 	},
 	view:function(event) {
@@ -265,11 +269,11 @@ var Calendar = {
 				var action = $(this).attr("data-action");
 				
 				if (action == "modify") {
-					Calendar.modify(idx);
+					Calendar.modify(event);
 				}
 				
 				if (action == "delete") {
-					Calendar.delete(idx);
+					Calendar.delete(event);
 				}
 				
 				e.stopPropagation();
@@ -346,11 +350,11 @@ var Calendar = {
 			return false;
 		});
 	},
-	delete:function(idx) {
+	delete:function(event) {
 		var $context = $("#ModuleCalendarContext");
 		var $calendar = $("div[data-role=calendar]",$context);
 		
-		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"delete",idx:idx},function($modal,$form) {
+		iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"delete",uid:event.uid,rid:event.rid},function($modal,$form) {
 			$modal.on("close",function() {
 				var $context = $("#ModuleCalendarContext");
 				var $calendar = $("div[data-role=calendar]",$context);
@@ -358,7 +362,7 @@ var Calendar = {
 			});
 			
 			$form.on("submit",function() {
-				$form.send(ENV.getProcessUrl("calendar","deleteSchedule"),function(result) {
+				$form.send(ENV.getProcessUrl("calendar","deleteEvent"),function(result) {
 					if (result.success == true) {
 						$calendar.fullCalendar("refetchEvents");
 						iModule.modal.close();
@@ -371,8 +375,6 @@ var Calendar = {
 		});
 	},
 	updateDuration:function(event,revert) {
-		console.log(event);
-		return;
 		if (event.is_recurrence == true) {
 			iModule.modal.get(ENV.getProcessUrl("calendar","getModal"),{modal:"duration",uid:event.uid,rid:event.rid,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function($modal,$form) {
 				$modal.on("close",function() {
@@ -401,7 +403,7 @@ var Calendar = {
 				if (result.success == false) revert();
 			});
 		} else {
-			$.send(ENV.getProcessUrl("calendar","saveDuration"),{idx:event.id,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function(result) {
+			$.send(ENV.getProcessUrl("calendar","saveDuration"),{uid:event.data.uid,rid:event.data.rid,start:event.start.format("YYYY-MM-DD HH:mm:ss"),end:event.end.format("YYYY-MM-DD HH:mm:ss")},function(result) {
 				if (result.success == false) {
 					revert();
 				}

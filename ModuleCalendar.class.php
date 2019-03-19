@@ -511,8 +511,8 @@ class ModuleCalendar {
 			}
 			
 			header("Content-type: text; charset=utf-8");
-//			header("Content-type: text/calendar; charset=utf-8");
-//			header("Content-Disposition: attachment; filename=ical.ics");
+			header("Content-type: text/calendar; charset=utf-8");
+			header("Content-Disposition: attachment; filename=ical.ics");
 			exit(implode("\r\n",$ics));
 		}
 		
@@ -792,111 +792,20 @@ class ModuleCalendar {
 	}
 	
 	/**
-	 * 일정을 수정하는 모달을 가져온다.
+	 * 이벤트를 삭제하는 모달을 가져온다.
 	 *
-	 * @param string $idx 일정고유번호
+	 * @param string $event 이벤트객체
 	 * @return string $html 모달 HTML
 	 */
-	function getModifyModal($idx) {
-		$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-		if ($schedule == null) return;
-		
-		$is_allday = $schedule->is_allday == 'TRUE';
-		
-		$start_date = date('Y-m-d',$schedule->start_time);
-		$start_time = $is_allday == true ? '' : date('H:i',$schedule->start_time);
-		
-		$end_date = date('H',$schedule->end_time) == '00' ? date('Y-m-d',$schedule->end_time - 1) : date('Y-m-d',$schedule->end_time);
-		$end_time = $is_allday == true ? '' : (date('H',$schedule->end_time) == '00' ? '24:00' : date('H:i',$schedule->end_time));
-		
-		$title = '일정수정';
-		
-		$content = '<input type="hidden" name="cid" value="'.$schedule->cid.'">';
-		$content.= '<input type="hidden" name="idx" value="'.$schedule->idx.'">';
-		
-		$content.= '<div data-module="calendar" data-role="schedule">';
-		$content.= '<div data-role="inputset">';
-		$content.= '<div data-role="input"><input type="text" name="title" placeholder="일정명" value="'.GetString($schedule->title,'input').'"></div>';
-		$content.= '<div data-role="text" class="color"><i data-role="color"></i></div>';
-		$content.= '<div data-role="input"><select name="category">';
-		$categories = $this->db()->select($this->table->category)->where('cid',$schedule->cid)->orderBy('sort','asc')->get();
-		foreach ($categories as $category) {
-			$content.= '<option value="'.$category->idx.'" data-color="'.$category->color.'"'.($category->idx == $schedule->category ? ' selected="selected"' : '').'>'.$category->title.'</option>';
-		}
-		$content.= '</select></div>';
-		$content.= '</div>';
-		
-		$content.= '<div class="line"><span>일정</span></div>';
-		
-		$content.= '<div data-role="inputset" class="label">';
-		$content.= '<div data-role="text" class="label">하루종일</div>';
-		$content.= '<div data-role="input"><label><input type="checkbox" name="is_allday" value="TRUE"'.($is_allday == true ? ' checked="checked"' : '').'></label></div>';
-		$content.= '</div>';
-		
-		$content.= '<div data-role="inputset" class="label">';
-		$content.= '<div data-role="text" class="label">시작</div>';
-		$content.= '<div data-role="input"><input type="date" name="start_date" data-format="YYYY-MM-DD" value="'.$start_date.'"></div>';
-		$content.= '<div data-role="input"><input type="time" name="start_time" data-format="HH:mm" value="'.$start_time.'"></div>';
-		$content.= '</div>';
-		
-		$content.= '<div data-role="inputset" class="label">';
-		$content.= '<div data-role="text" class="label">종료</div>';
-		$content.= '<div data-role="input"><input type="date" name="end_date" data-format="YYYY-MM-DD" value="'.$end_date.'"></div>';
-		$content.= '<div data-role="input"><input type="time" name="end_time" data-format="HH:mm" value="'.$end_time.'"></div>';
-		$content.= '</div>';
-		
-		if ($schedule->repeat != 'NONE') {
-			$content.= '<div class="line"><span>반복되고 있는 일정 수정</span></div>';
-			$content.= '<div data-role="inputset" class="label">';
-			$content.= '<div data-role="text" class="label">향후일정</div>';
-			$content.= '<div data-role="input"><select name="repeat_modify"><option value="NEXT">현재 일정 이후 반복되는 일정도 함께 수정합니다.</option><option value="ONCE">현재 일정만 수정합니다.</option></select></div>';
-			$content.= '</div>';
-		}
-		
-		$content.= '<div data-role="inputset" class="label">';
-		$content.= '<div data-role="text" class="label">반복</div>';
-		$content.= '<div data-role="input"><select name="repeat">';
-		$content.= '<option value="NONE">반복없음</option>';
-		foreach ($this->getText('repeat_type') as $value=>$display) {
-			$content.= '<option value="'.$value.'"'.($value == $schedule->repeat ? ' selected="selected"' : '').'>'.$display.'</option>';
-		}
-		$content.= '</select></div>';
-		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
-		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD" value="'.date('Y-m-d',$schedule->repeat_end_date - 1).'"></div>';
-		$content.= '</div>';
-		
-		$buttons = array();
-		
-		$button = new stdClass();
-		$button->type = 'close';
-		$button->text = '취소';
-		$buttons[] = $button;
-		
-		$button = new stdClass();
-		$button->type = 'submit';
-		$button->text = '수정';
-		$buttons[] = $button;
-		
-		return $this->getTemplet()->getModal($title,$content,true,array('width'=>500),$buttons);
-	}
-	
-	/**
-	 * 일정을 수정하는 모달을 가져온다.
-	 *
-	 * @param string $idx 일정고유번호
-	 * @return string $html 모달 HTML
-	 */
-	function getDeleteModal($idx) {
-		$schedule = $this->db()->select($this->table->schedule)->where('idx',$idx)->getOne();
-		if ($schedule == null) return;
-		
+	function getEventDeleteModal($event) {
 		$title = '일정삭제';
 		
-		$content = '<input type="hidden" name="idx" value="'.$schedule->idx.'">';
-		$content.= '<div data-module="calendar" data-role="schedule">';
-		$content.= '<div data-ro;e="messeage">현재 일정을 삭제하시겠습니까?</div>';
+		$content = '<input type="hidden" name="uid" value="'.$event->uid.'">';
+		$content.= '<input type="hidden" name="rid" value="'.$event->rid.'">';
+		$content.= '<div data-module="calendar" data-role="event">';
+		$content.= '<div data-role="messeage">현재 일정을 삭제하시겠습니까?</div>';
 		
-		if ($schedule->repeat != 'NONE') {
+		if ($event->recurrence) {
 			$content.= '<div class="line"><span>반복되고 있는 일정 삭제</span></div>';
 			$content.= '<div data-role="input"><select name="repeat_delete"><option value="NEXT">현재 일정 이후 반복되는 일정도 함께 삭제합니다.</option><option value="ONCE">현재 일정만 삭제합니다.</option></select></div>';
 		}
@@ -1007,10 +916,12 @@ class ModuleCalendar {
 		$buttons = array();
 		
 		if (($event->midx != 0 && $event->midx == $this->IM->getModule('member')->getLogged()) || $this->checkPermission($event->cid,$event->category,'edit') == true) {
+			/*
 			$button = new stdClass();
 			$button->type = 'edit';
 			$button->text = '수정';
 			$buttons[] = $button;
+			*/
 			
 			$button = new stdClass();
 			$button->type = 'delete';
@@ -1059,6 +970,21 @@ class ModuleCalendar {
 		if ($category == null) return null;
 		
 		return $category;
+	}
+	
+	/**
+	 * 이벤트를 가져온다.
+	 *
+	 * @param string $cid 캘린더아이디
+	 * @param string $category 카테고리고유값
+	 * @param int $start_time 기간(시작)
+	 * @param int $end_time 기간(종료)
+	 * @return object[] $events
+	 */
+	function getEvent($uid,$rid) {
+		$event = $this->db()->select($this->table->event)->where('uid',$uid)->where('rid',$rid)->getOne();
+		
+		return $event;
 	}
 	
 	/**
