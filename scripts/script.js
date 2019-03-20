@@ -66,7 +66,7 @@ var Calendar = {
 				defaultView:views[view],
 				defaultDate:defaultDate,
 				editable:$calendar.attr("data-writable") == "TRUE" || $calendar.attr("data-editable") == "TRUE",
-				selectable:$calendar.attr("data-selectable") == "TRUE",
+				selectable:$calendar.attr("data-writable") == "TRUE",
 				displayEventEnd:false,
 				handleWindowResize:false,
 				contentHeight:"auto",
@@ -94,6 +94,7 @@ var Calendar = {
 					Calendar.updateDuration(event,revert);
 				},
 				select:function(start,end) {
+					if ($calendar.attr("data-writable") == "FALSE") return;
 					Calendar.write(start.format("YYYY-MM-DD HH:mm:ss"),end.format("YYYY-MM-DD HH:mm:ss"));
 				},
 				viewRender:function(calendar) {
