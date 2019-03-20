@@ -7,11 +7,15 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2018. 3. 18.
+ * @modified 2019. 3. 21.
  */
 var Calendar = {
 	getUrl:function(view,idx) {
-		return ENV.getUrl(null,null,view,idx);
+		var url = $("div[data-module=calendar]").attr("data-base-url") ? $("div[data-module=calendar]").attr("data-base-url") : ENV.getUrl(null,null,false);
+		if (!view || view == false) return url;
+		url+= "/"+view;
+		if (!idx || idx == false) return url;
+		return url+"/"+idx;
 	},
 	init:function(id) {
 		var $context = $("#"+id);
