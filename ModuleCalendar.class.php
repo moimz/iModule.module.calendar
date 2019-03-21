@@ -495,20 +495,24 @@ class ModuleCalendar {
 				$value = strip_tags($value);
 				$value = preg_replace('/\n+/', ' ', $value);
 				$value = preg_replace('/\s{2,}/', ' ', $value);
-				$preamble_len = strlen($preamble);
+				$preamble_len = mb_strlen($preamble);
 				$lines = array();
-				while (strlen($value)>(75-$preamble_len)) {
-					$space = (75-$preamble_len);
+				$looper = 0;
+				$looper2 = 0;
+				
+				while (mb_strlen($value)>(75 - $preamble_len)) {
+					$looper2 = 0;
+					$space = 75 - $preamble_len;
 					$mbcc = $space;
 					while ($mbcc) {
-						$line = mb_substr($value, 0, $mbcc);
-						$oct = strlen($line);
+						$line = mb_substr($value,0,$mbcc);
+						$oct = mb_strlen($line);
 						if ($oct > $space) {
-							$mbcc -= $oct-$space;
+							$mbcc-= $oct-$space;
 						} else {
 							$lines[] = $line;
 							$preamble_len = 1;
-							$value = mb_substr($value, $mbcc);
+							$value = mb_substr($value,$mbcc);
 							break;
 						}
 					}
