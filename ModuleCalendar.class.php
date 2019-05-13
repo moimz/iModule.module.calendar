@@ -8,7 +8,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2018. 3. 18.
+ * @modified 2019. 5. 13.
  */
 class ModuleCalendar {
 	/**
@@ -1029,7 +1029,7 @@ class ModuleCalendar {
 				$iCal->setRawData($this->IM->cache()->get('module','calendar',$cid.'@'.$category->idx));
 			}
 		} else {
-			if (true || $this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < $category->latest_update) {
+			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < $category->latest_update) {
 				$iCal = new iCal($this->IM->getModuleUrl('calendar','ical',$cid,$category->idx,true));
 				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
 			} else {
@@ -1039,15 +1039,17 @@ class ModuleCalendar {
 		}
 		
 		$editable = $this->checkPermission($cid,$category->idx,'edit');
-		
 		$events = array();
-		foreach ($iCal->getEvents($start_time,$end_time) as $data) {
+		$iCal->setStartDate(date('Y-m-d',$start_time));
+		foreach ($iCal->eventsFromRange(date('Y-m-d',$start_time),date('Y-m-d',$end_time)) as $data) {
 			$event = new stdClass();
 			$event->id = $data->uid.(isset($data->recurrence_id) == true ? '@'.$data->recurrence_id : '');
 			$event->title = $data->summary;
 			$event->start = date('c',strtotime($data->dtstart));
 			$event->end = date('c',strtotime($data->dtend));
-			$event->allDay = strlen($data->dtstart) == 8 && strlen($data->dtend);
+			$event->allDay = (strlen($data->dtstart) == 8 && strlen($data->dtend) == 8) || (substr($data->dtstart,-1) == 'Z' && substr($data->dtend,-1) == 'Z');
+			$event->dtstart = $data->dtstart;
+			$event->dtend = $data->dtend;
 			$event->backgroundColor = $category->color;
 			$event->is_recurrence = isset($data->recurrence_id) == true;
 			$event->editable = $editable;
@@ -1070,7 +1072,6 @@ class ModuleCalendar {
 			$event->origin = $data;
 			$events[] = $event;
 		}
-		
 		return $events;
 	}
 	
