@@ -653,6 +653,7 @@ class ModuleCalendar {
 		}
 		
 		$content.= '<div data-role="message">이벤트 분류별로 캘린더를 구독할 수 있습니다.<br>iCal 을 지원하는 외부서비스(구글/네이버 등)나, PC 또는 모바일 기기의 캘린더 프로그램에서 구독할 수 있습니다.</div>';
+		$content.= '</div>';
 		
 		$buttons = array();
 		
