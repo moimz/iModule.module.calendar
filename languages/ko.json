@@ -57,5 +57,19 @@
 		"DAY":"날",
 		"WEEKDAY":"평일",
 		"WEEKEND":"주말"
+	},
+	"admin":{
+		"list":{
+			"title":"캘린더관리",
+			"add_calendar":"캘린더추가",
+			"delete_calendar":"선택 캘린더삭제",
+			"columns":{
+				"cid":"캘린더아이디",
+				"title":"캘린더명",
+				"category":"카테고리",
+				"event":"이벤트",
+				"latest_update":"마지막 업데이트"
+			}
+		}
 	}
 }
