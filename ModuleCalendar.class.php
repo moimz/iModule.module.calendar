@@ -721,9 +721,11 @@ class ModuleCalendar {
 		$content.= '<div data-role="text" class="label">반복주기</div>';
 		$content.= '<div data-role="input"><select name="repeat">';
 		$content.= '<option value="NONE">반복없음</option>';
+		/*
 		foreach ($this->getText('repeat_type') as $value=>$display) {
 			$content.= '<option value="'.$value.'">'.$display.'</option>';
 		}
+		*/
 		$content.= '</select></div></div>';
 		
 		$content.= '<div data-role="inputset" data-name="repeat_interval">';
@@ -786,9 +788,9 @@ class ModuleCalendar {
 		$content.= '</select></div>';
 		$content.= '</div>';
 		
-//		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
-//		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD"></div>';
-//		$content.= '</div>';
+		$content.= '<div data-role="text" class="label repeat_end_date">종료</div>';
+		$content.= '<div data-role="input"><input type="date" name="repeat_end_date" data-format="YYYY-MM-DD"></div>';
+		$content.= '</div>';
 		
 		$content.= '</div>';
 		
