@@ -15,6 +15,7 @@ if (defined('__IM__') == false) exit;
 $uid = Param('uid');
 $rid = Param('rid');
 $event = $this->getEvent($uid,$rid);
+
 if ($event == null) {
 	$results->success = false;
 	$results->message = $this->getErrorText('NOT_FOUND');

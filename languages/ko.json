@@ -69,6 +69,17 @@
 				"category":"카테고리",
 				"event":"이벤트",
 				"latest_update":"마지막 업데이트"
+			},
+			"form":{
+				"default_setting":"기본설정",
+				"cid":"캘린더아이디",
+				"title":"캘린더명",
+				"design_setting":"디자인설정",
+				"templet":"템플릿"
+			},
+			"window":{
+				"add":"캘린더추가",
+				"modify":"캘린더수정"
 			}
 		}
 	}

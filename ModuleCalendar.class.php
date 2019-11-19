@@ -8,7 +8,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 5. 13.
+ * @modified 2019. 11. 20.
  */
 class ModuleCalendar {
 	/**
@@ -533,8 +533,9 @@ class ModuleCalendar {
 		
 		$html = $this->getContext($container);
 		
-		$this->IM->addHeadResource('style',$this->getModule()->getDir().'/styles/container.css.php');
+		$this->IM->addHeadResource('style',$this->getModule()->getDir().'/styles/container.css');
 		
+		$this->IM->removeTemplet();
 		$footer = $this->IM->getFooter();
 		$header = $this->IM->getHeader();
 		
@@ -933,14 +934,12 @@ class ModuleCalendar {
 		
 		$buttons = array();
 		
-		if (($event->midx != 0 && $event->midx == $this->IM->getModule('member')->getLogged()) || $this->checkPermission($event->cid,$event->category,'edit') == true) {
-			/*
+		if ($event->midx == $this->IM->getModule('member')->getLogged() || $this->checkPermission($event->cid,$event->category,'edit') == true) {
 			$button = new stdClass();
 			$button->type = 'edit';
 			$button->text = '수정';
 			$buttons[] = $button;
-			*/
-			
+		
 			$button = new stdClass();
 			$button->type = 'delete';
 			$button->text = '삭제';
@@ -1087,6 +1086,7 @@ class ModuleCalendar {
 	 * @return boolean $hasPermssion
 	 */
 	function checkPermission($cid,$category,$type) {
+		if (($type == 'write' || $type == 'edit') && $this->IM->getModule('member')->isLogged() == false) return false;
 		$categories = $this->db()->select($this->table->category)->where('cid',$cid);
 		if ($category) $categories->where('idx',$category);
 		$categories = $categories->get();
@@ -1105,10 +1105,9 @@ class ModuleCalendar {
 	 * @param string $cid 캘린더아이디
 	 */
 	function updateCalendar($cid) {
-		$status = $this->db()->select($this->table->category,'sum(event) as event, max(latest_update) as latest_update')->where('cid',$cid)->getOne();
+		$status = $this->db()->select($this->table->category,'sum(event) as event')->where('cid',$cid)->getOne();
 		$event = $status->event ? $status->event : 0;
-		$latest_update = $status->latest_update ? $status->latest_update : 0;
-		$this->db()->update($this->table->calendar,array('event'=>$event,'latest_update'=>$latest_update))->where('cid',$cid)->execute();
+		$this->db()->update($this->table->calendar,array('event'=>$event,'latest_update'=>time()))->where('cid',$cid)->execute();
 	}
 	
 	/**
@@ -1117,9 +1116,9 @@ class ModuleCalendar {
 	 * @param string $cid 캘린더아이디
 	 */
 	function updateCategory($category) {
-		$status = $this->db()->select($this->table->event,'count(*) as event, max(latest_update) as latest_update')->where('category',$category)->getOne();
+		$status = $this->db()->select($this->table->event,'count(*) as event')->where('category',$category)->getOne();
 		$event = $status->event ? $status->event : 0;
-		$latest_update = $status->latest_update ? $status->latest_update : 0;
+		$latest_update = time();
 		$this->db()->update($this->table->category,array('event'=>$event,'latest_update'=>$latest_update))->where('idx',$category)->execute();
 	}
 	

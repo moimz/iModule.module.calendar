@@ -16,7 +16,16 @@ $cid = Param('cid');
 $lists = $this->db()->select($this->table->category)->where('cid',$cid)->orderBy('sort','asc')->get();
 
 for ($i=0, $loop=count($lists);$i<$loop;$i++) {
-
+	if ($lists[$i]->ical) {
+		$lists[$i]->detail = $lists[$i]->ical;
+	} else {
+		$lists[$i]->detail = 'Event : '.number_format($this->db()->select($this->table->event)->where('category',$lists[$i]->idx)->count());
+	}
+	
+	if ($i != $lists[$i]->sort) {
+		$this->db()->update($this->table->category,array('sort'=>$i))->where('idx',$lists[$i]->idx)->execute();
+		$lists[$i]->sort = $i;
+	}
 }
 
 $results->success = true;

@@ -31,8 +31,20 @@ if ($modal == 'write') {
 
 if ($modal == 'view') {
 	$event = json_decode(Param('event'));
-	$results->success = $event != null;
-	if ($event != null) $results->modalHtml = $this->getEventViewModal($event);
+	if ($event == null) {
+		$results->success = false;
+		$results->error = $this->getErrorText('NOT_FOUND');
+		return;
+	}
+	
+	if ($this->checkPermission($event->cid,$event->category,'view') == false) {
+		$results->success = false;
+		$results->message = $this->getErrorText('FORBIDDEN');
+		return;
+	}
+	
+	$results->success = true;
+	$results->modalHtml = $this->getEventViewModal($event);
 }
 
 if ($modal == 'share') {
@@ -72,6 +84,7 @@ if ($modal == 'delete') {
 	$uid = Param('uid');
 	$rid = Param('rid');
 	$event = $this->getEvent($uid,$rid);
+	
 	if ($event == null) {
 		$results->success = false;
 		$results->message = $this->getErrorText('NOT_FOUND');

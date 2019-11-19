@@ -116,7 +116,7 @@ Ext.onReady(function () { Ext.getCmp("iModuleAdminPanel").add(
 					displayInfo:false,
 					items:[
 						"->",
-						{xtype:"tbtext",text:"항목 더블클릭 : 게시판보기 / 항목 우클릭 : 상세메뉴"}
+						{xtype:"tbtext",text:"항목 더블클릭 : 캘린더보기 / 항목 우클릭 : 상세메뉴"}
 					],
 					listeners:{
 						beforerender:function(tool) {
@@ -126,7 +126,7 @@ Ext.onReady(function () { Ext.getCmp("iModuleAdminPanel").add(
 				}),
 				listeners:{
 					itemdblclick:function(grid,record) {
-						Calendar.list.view(record.data.bid,record.data.title);
+						Calendar.list.view(record.data.cid,record.data.title);
 					},
 					itemcontextmenu:function(grid,record,item,index,e) {
 						var menu = new Ext.menu.Menu();

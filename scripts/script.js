@@ -7,7 +7,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 3. 21.
+ * @modified 2019. 11. 20.
  */
 var Calendar = {
 	getUrl:function(view,idx) {
@@ -369,8 +369,10 @@ var Calendar = {
 			$form.on("submit",function() {
 				$form.send(ENV.getProcessUrl("calendar","deleteEvent"),function(result) {
 					if (result.success == true) {
-						$calendar.fullCalendar("refetchEvents");
-						iModule.modal.close();
+						iModule.modal.alert("안내","일정을 성공적으로 삭제하였습니다.",function() {
+							$calendar.fullCalendar("refetchEvents");
+							iModule.modal.close();
+						});
 					}
 				});
 				return false;

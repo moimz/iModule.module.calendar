@@ -7,10 +7,163 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 11. 15.
+ * @modified 2019. 11. 19.
  */
 var Calendar = {
-	
+	list:{
+		/**
+		 * 캘린더 추가/삭제
+		 *
+		 * @param string cid 캘린더아이디 (없을 경우 추가)
+		 */
+		add:function(cid) {
+			new Ext.Window({
+				id:"ModuleCalendarAddCalendarWindow",
+				title:(cid ? Calendar.getText("admin/list/window/modify") : Calendar.getText("admin/list/window/add")),
+				modal:true,
+				width:600,
+				border:false,
+				autoScroll:true,
+				items:[
+					new Ext.form.Panel({
+						id:"ModuleCalendarAddCalendarForm",
+						border:false,
+						bodyPadding:"10 10 0 10",
+						fieldDefaults:{labelAlign:"right",labelWidth:100,anchor:"100%",allowBlank:false},
+						items:[
+							new Ext.form.Hidden({
+								name:"mode",
+								value:(cid ? "modify" : "add")
+							}),
+							new Ext.form.FieldSet({
+								title:Calendar.getText("admin/list/form/default_setting"),
+								items:[
+									new Ext.form.TextField({
+										fieldLabel:Calendar.getText("admin/list/form/cid"),
+										name:"cid",
+										maxLength:20,
+										readOnly:cid ? true : false
+									}),
+									new Ext.form.TextField({
+										fieldLabel:Calendar.getText("admin/list/form/title"),
+										name:"title",
+										maxLength:50
+									})
+								]
+							}),
+							new Ext.form.FieldSet({
+								title:Calendar.getText("admin/list/form/design_setting"),
+								items:[
+									Admin.templetField(Calendar.getText("admin/list/form/templet"),"templet","module","calendar",false,ENV.getProcessUrl("calendar","@getTempletConfigs"),{},["cid"])
+								]
+							})
+						]
+					})
+				],
+				buttons:[
+					new Ext.Button({
+						text:Calendar.getText("button/confirm"),
+						handler:function() {
+							Ext.getCmp("ModuleCalendarAddCalendarForm").getForm().submit({
+								url:ENV.getProcessUrl("calendar","@saveCalendar"),
+								submitEmptyText:false,
+								waitTitle:Admin.getText("action/wait"),
+								waitMsg:Admin.getText("action/saving"),
+								success:function(form,action) {
+									Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/saved"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function(button) {
+										Ext.getCmp("ModuleCalendarAddCalendarWindow").close();
+										Ext.getCmp("ModuleCalendarList").getStore().reload();
+									}});
+								},
+								failure:function(form,action) {
+									if (action.result) {
+										if (action.result.message) {
+											Ext.Msg.show({title:Admin.getText("alert/error"),msg:action.result.message,buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+										} else {
+											Ext.Msg.show({title:Admin.getText("alert/error"),msg:Admin.getErrorText("DATA_SAVE_FAILED"),buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+										}
+									} else {
+										Ext.Msg.show({title:Admin.getText("alert/error"),msg:Admin.getErrorText("INVALID_FORM_DATA"),buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+									}
+								}
+							});
+						}
+					}),
+					new Ext.Button({
+						text:Calendar.getText("button/cancel"),
+						handler:function() {
+							Ext.getCmp("ModuleCalendarAddCalendarWindow").close();
+						}
+					})
+				],
+				listeners:{
+					show:function() {
+						if (cid !== undefined) {
+							Ext.getCmp("ModuleCalendarAddCalendarForm").getForm().load({
+								url:ENV.getProcessUrl("calendar","@getCalendar"),
+								params:{cid:cid},
+								waitTitle:Admin.getText("action/wait"),
+								waitMsg:Admin.getText("action/loading"),
+								success:function(form,action) {
+								},
+								failure:function(form,action) {
+									if (action.result && action.result.message) {
+										Ext.Msg.show({title:Admin.getText("alert/error"),msg:action.result.message,buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+									} else {
+										Ext.Msg.show({title:Admin.getText("alert/error"),msg:Admin.getText("error/load"),buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+									}
+									Ext.getCmp("ModuleCalendarAddCalendarWindow").close();
+								}
+							});
+						}
+					}
+				}
+			}).show();
+		},
+		view:function(cid,title) {
+			new Ext.Window({
+				id:"ModuleCalendarViewCalendarWindow",
+				title:title,
+				modal:true,
+				width:950,
+				height:600,
+				border:false,
+				layout:"fit",
+				maximizable:true,
+				items:[
+					new Ext.Panel({
+						border:false,
+						html:'<iframe src="'+ENV.getModuleUrl("calendar",cid,false)+'" style="width:100%; height:100%; border:0px;" frameborder="0" scrolling="1"></iframe>'
+					})
+				]
+			}).show();
+		},
+		delete:function() {
+			var selected = Ext.getCmp("ModuleCalendarList").getSelectionModel().getSelection();
+			if (selected.length == 0) {
+				Ext.Msg.show({title:Admin.getText("alert/error"),msg:"삭제할 캘린더을 선택하여 주십시오.",buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+				return;
+			}
+			
+			var cids = [];
+			for (var i=0, loop=selected.length;i<loop;i++) {
+				cids.push(selected[i].get("cid"));
+			}
+			
+			Ext.Msg.show({title:Admin.getText("alert/info"),msg:"선택하신 캘린더을 정말 삭제하시겠습니까?<br>캘린더에 포함된 모든 카테고리/일정이 함께 삭제됩니다.",buttons:Ext.Msg.OKCANCEL,icon:Ext.Msg.QUESTION,fn:function(button) {
+				if (button == "ok") {
+					Ext.Msg.wait(Admin.getText("action/working"),Admin.getText("action/wait"));
+					$.send(ENV.getProcessUrl("calendar","@deleteCalendar"),{cid:cids.join(",")},function(result) {
+						if (result.success == true) {
+							Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/worked"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function() {
+								Ext.getCmp("ModuleCalendarList").getStore().reload();
+							}});
+						}
+					});
+				}
+			}});
+		}
+	},
 	category:{
 		list:function(cid) {
 			new Ext.Window({
@@ -50,11 +203,11 @@ var Calendar = {
 								extraParams:{cid:cid},
 								reader:{type:"json"}
 							},
-							remoteSort:true,
+							remoteSort:false,
 							sorters:[{property:"sort",direction:"ASC"}],
 							autoLoad:true,
 							pageSize:50,
-							fields:["cid","title"],
+							fields:["cid","title",{name:"sort",type:"int"}],
 							listeners:{
 								load:function(store,records,success,e) {
 									if (success == false) {
@@ -84,12 +237,14 @@ var Calendar = {
 								iconCls:"fa fa-caret-up",
 								handler:function() {
 									Admin.gridSort(Ext.getCmp("ModuleCalendarCategoryList"),"sort","up");
+									Admin.gridSave(Ext.getCmp("ModuleCalendarCategoryList"),ENV.getProcessUrl("calendar","@saveCategorySort"),500);
 								}
 							}),
 							new Ext.Button({
 								iconCls:"fa fa-caret-down",
 								handler:function() {
 									Admin.gridSort(Ext.getCmp("ModuleCalendarCategoryList"),"sort","down");
+									Admin.gridSave(Ext.getCmp("ModuleCalendarCategoryList"),ENV.getProcessUrl("calendar","@saveCategorySort"),500);
 								}
 							}),
 							"->",
@@ -200,15 +355,18 @@ var Calendar = {
 										name:"ical",
 										margin:"0 0 0 0",
 										emptyText:"iCal 주소를 입력하여 주십시오.",
+										disabled:true,
 										afterBodyEl:'<div class="x-form-help">http(s):// 를 포함한 전체 iCal 경로를 입력하여 주십시오.</div>'
 									})
 								],
 								listeners:{
 									expand:function(form,value) {
+										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("ical").enable();
 										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("permission_write").disable();
 										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("permission_edit").disable();
 									},
 									collapse:function() {
+										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("ical").disable();
 										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("permission_write").enable();
 										Ext.getCmp("ModuleCalendarAddCategoryForm").getForm().findField("permission_edit").enable();
 									}
@@ -294,9 +452,21 @@ var Calendar = {
 				return;
 			}
 			
-			Ext.Msg.show({title:Admin.getText("alert/info"),msg:"선택하신 카테고리를 삭제하시겠습니까?<br>삭제되는 카테고리의 게시물이 기본 카테고리로 이동됩니다.",buttons:Ext.Msg.OKCANCEL,icon:Ext.Msg.QUESTION,fn:function(button) {
+			var idxes = [];
+			for (var i=0, loop=selected.length;i<loop;i++) {
+				idxes.push(selected[i].get("idx"));
+			}
+			
+			Ext.Msg.show({title:Admin.getText("alert/info"),msg:"선택하신 카테고리를 삭제하시겠습니까?<br>삭제되는 카테고리의 일정이 함께 삭제됩니다.",buttons:Ext.Msg.OKCANCEL,icon:Ext.Msg.QUESTION,fn:function(button) {
 				if (button == "ok") {
-					
+					Ext.Msg.wait(Admin.getText("action/working"),Admin.getText("action/wait"));
+					$.send(ENV.getProcessUrl("calendar","@deleteCategory"),{idx:idxes.join(",")},function(result) {
+						if (result.success == true) {
+							Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/worked"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function() {
+								Ext.getCmp("ModuleCalendarCategoryList").getStore().reload();
+							}});
+						}
+					});
 				}
 			}});
 		}
