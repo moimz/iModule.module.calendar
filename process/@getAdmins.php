@@ -24,8 +24,8 @@ for ($i=0, $loop=count($lists);$i<$loop;$i++) {
 	} else {
 		$cids = explode(',',$lists[$i]->cid);
 		foreach ($cids as &$cid) {
-			$board = $this->getBoard($cid);
-			$cid = $board == null ? 'Unknown('.$cid.')' : $board->title.'('.$cid.')';
+			$calendar = $this->getCalendar($cid);
+			$cid = $calendar == null ? 'Unknown('.$cid.')' : $calendar->title.'('.$cid.')';
 		}
 		$lists[$i]->cid = implode(', ',$cids);
 	}
