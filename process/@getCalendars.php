@@ -8,13 +8,14 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 11. 15.
+ * @modified 2019. 12. 11.
  */
 if (defined('__IM__') == false) exit;
 
 $start = Request('start');
 $limit = Request('limit');
 $lists = $this->db()->select($this->table->calendar);
+if ($this->isAdmin() !== true) $lists->where('cid',$this->isAdmin(),'IN');
 $total = $lists->copy()->count();
 $sort = Request('sort') ? Request('sort') : 'title';
 $dir = Request('dir') ? Request('dir') : 'asc';
