@@ -8,7 +8,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 3. 18.
+ * @modified 2019. 12. 10.
  */
 if (defined('__IM__') == false) exit;
 
@@ -32,7 +32,7 @@ if ($uid) {
 		return;
 	}
 	
-	if ($this->checkPermission($event->cid,$event->category,'modify') == false) {
+	if ($this->checkPermission($event->cid,$event->category,'edit') == false) {
 		$results->success = false;
 		$results->message = $this->getErrorText('FORBIDDEN');
 		return;
@@ -90,7 +90,8 @@ if (count($errors) == 0) {
 	$insert['latest_update'] = time();
 	
 	if ($uid) {
-		
+		$this->db()->update($this->table->event,$insert)->where('uid',$uid)->where('rid',$rid)->execute();
+		$results->success = true;
 	} else {
 		$this->db()->setLockMethod('WRITE')->lock($this->table->event);
 		$uid = UUID::v4();
@@ -105,7 +106,7 @@ if (count($errors) == 0) {
 		$insert['reg_date'] = time();
 		$insert['sequence'] = 0;
 		
-		$idx = $this->db()->insert($this->table->event,$insert)->execute();
+		$this->db()->insert($this->table->event,$insert)->execute();
 		$results->success = true;
 	}
 	

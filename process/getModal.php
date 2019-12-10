@@ -8,7 +8,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 3. 19.
+ * @modified 2019. 12. 10.
  */
 if (defined('__IM__') == false) exit;
 
@@ -77,7 +77,7 @@ if ($modal == 'edit') {
 	}
 	
 	$results->success = true;
-	$results->modalHtml = $this->getEventEditModal($event);
+	$results->modalHtml = $this->getEventWriteModal($event);
 }
 
 if ($modal == 'delete') {

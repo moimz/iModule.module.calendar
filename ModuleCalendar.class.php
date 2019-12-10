@@ -8,7 +8,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 11. 20.
+ * @modified 2019. 12. 10.
  */
 class ModuleCalendar {
 	/**
@@ -674,22 +674,45 @@ class ModuleCalendar {
 	 * @param int $end 일정 종료시각
 	 * @return string $html 모달 HTML
 	 */
-	function getEventWriteModal($cid,$start,$end) {
-		$is_allday = date('H',$start) == '00' && date('H',$end) == '00';
-		
-		$start_date = date('Y-m-d',$start);
-		$start_time = $is_allday == true ? '' : date('H:i',$start);
-		
-		$end_date = date('H',$end) == '00' ? date('Y-m-d',$end - 1) : date('Y-m-d',$end);
-		$end_time = $is_allday == true ? '' : (date('H',$end) == '00' ? '24:00' : date('H:i',$end));
-		
-		$title = '일정추가';
-		
-		$content = '<input type="hidden" name="cid" value="'.$cid.'">';
+	function getEventWriteModal($cid,$start=null,$end=null) {
+		if (is_object($cid) == true) {
+			$title = '일정수정';
+			
+			$event = $cid;
+			$cid = $event->cid;
+			$start = $event->start_time;
+			$end = $event->end_time;
+			
+			$is_allday = $event->is_allday;
+			
+			$start_date = date('Y-m-d',$event->start_time);
+			$start_time = $is_allday == true ? '' : date('H:i',$start);
+			
+			$end_date = date('H',$end) == '00' ? date('Y-m-d',$end - 1) : date('Y-m-d',$end);
+			$end_time = $is_allday == true ? '' : (date('H',$end) == '00' ? '24:00' : date('H:i',$end));
+			
+			$content = '<input type="hidden" name="cid" value="'.$cid.'">';
+			$content.= '<input type="hidden" name="uid" value="'.$event->uid.'">';
+			$content.= '<input type="hidden" name="rid" value="'.$event->rid.'">';
+		} else {
+			$title = '일정추가';
+			
+			$event = null;
+			
+			$is_allday = date('H',$start) == '00' && date('H',$end) == '00';
+			
+			$start_date = date('Y-m-d',$start);
+			$start_time = $is_allday == true ? '' : date('H:i',$start);
+			
+			$end_date = date('H',$end) == '00' ? date('Y-m-d',$end - 1) : date('Y-m-d',$end);
+			$end_time = $is_allday == true ? '' : (date('H',$end) == '00' ? '24:00' : date('H:i',$end));
+			
+			$content = '<input type="hidden" name="cid" value="'.$cid.'">';
+		}
 		
 		$content.= '<div data-module="calendar" data-role="write">';
 		$content.= '<div data-role="inputset">';
-		$content.= '<div data-role="input"><input type="text" name="summary" placeholder="일정명"></div>';
+		$content.= '<div data-role="input"><input type="text" name="summary" placeholder="일정명"'.($event != null ? ' value="'.$event->summary.'"' : '').'></div>';
 		$content.= '<div data-role="input"><select name="category">';
 		$categories = $this->db()->select($this->table->category)->where('cid',$cid)->orderBy('sort','asc')->get();
 		foreach ($categories as $category) {
@@ -697,6 +720,18 @@ class ModuleCalendar {
 			$content.= '<option value="'.$category->idx.'" data-color="'.$category->color.'">'.$category->title.'</option>';
 		}
 		$content.= '</select></div>';
+		$content.= '</div>';
+		
+		$content.= '<div data-role="inputset">';
+		$content.= '<div data-role="input"><input type="text" name="url" placeholder="http://www.example.com"'.($event != null ? ' value="'.$event->url.'"' : '').'></div>';
+		$content.= '</div>';
+		
+		$content.= '<div data-role="inputset">';
+		$content.= '<div data-role="input"><input type="text" name="location" placeholder="장소"'.($event != null ? ' value="'.$event->location.'"' : '').'></div>';
+		$content.= '</div>';
+		
+		$content.= '<div data-role="input">';
+		$content.= '<textarea name="description" placeholder="상세내용">'.($event != null ? $event->description : '').'</textarea>';
 		$content.= '</div>';
 		
 		$content.= '<div class="line"><span>일정</span></div>';
@@ -804,7 +839,7 @@ class ModuleCalendar {
 		
 		$button = new stdClass();
 		$button->type = 'submit';
-		$button->text = '추가';
+		$button->text = $event == null ? '추가' : '수정';
 		$buttons[] = $button;
 		
 		return $this->getTemplet()->getModal($title,$content,true,array('width'=>400),$buttons);
@@ -1000,6 +1035,7 @@ class ModuleCalendar {
 	 */
 	function getEvent($uid,$rid) {
 		$event = $this->db()->select($this->table->event)->where('uid',$uid)->where('rid',$rid)->getOne();
+		$event->is_allday = $event->is_allday == 'TRUE';
 		
 		return $event;
 	}
