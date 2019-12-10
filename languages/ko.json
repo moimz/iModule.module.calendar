@@ -81,6 +81,18 @@
 				"add":"캘린더추가",
 				"modify":"캘린더수정"
 			}
+		},
+		"admin":{
+			"title":"관리자관리",
+			"add_admin":"관리자추가",
+			"modify_admin":"관리캘린더 수정",
+			"delete_admin":"선택 관리자 삭제",
+			"admin_all":"전체 캘린더 관리",
+			"columns":{
+				"name":"이름",
+				"email":"이메일주소",
+				"cid":"관리캘린더"
+			}
 		}
 	}
 }

@@ -38,8 +38,10 @@ class ModuleCalendar {
 	/**
 	 * DB접근을 줄이기 위해 DB에서 불러온 데이터를 저장할 변수를 정의한다.
 	 *
-	 * @private object[] $calendars 캘린더정보
+	 * @private $admins 관리자정보
+	 * @private $calendars 캘린더정보
 	 */
+	private $admins = array();
 	private $calendars = array();
 	
 	/**
@@ -67,6 +69,7 @@ class ModuleCalendar {
 		 * @see 모듈폴더의 package.json 의 databases 참고
 		 */
 		$this->table = new stdClass();
+		$this->table->admin = 'calendar_admin_table';
 		$this->table->calendar = 'calendar_table';
 		$this->table->category = 'calendar_category_table';
 		$this->table->event = 'calendar_event_table';
@@ -193,6 +196,11 @@ class ModuleCalendar {
 		 */
 		$IM = $this->IM;
 		$Module = $this;
+		
+		/**
+		 * 회원모듈 관리자를 불러온다.
+		 */
+		$this->IM->getModule('admin')->loadModule('member');
 		
 		ob_start();
 		INCLUDE $this->getModule()->getPath().'/admin/index.php';
@@ -1122,6 +1130,7 @@ class ModuleCalendar {
 	 * @return boolean $hasPermssion
 	 */
 	function checkPermission($cid,$category,$type) {
+		if ($this->isAdmin(null,$cid) === true) return true;
 		if (($type == 'write' || $type == 'edit') && $this->IM->getModule('member')->isLogged() == false) return false;
 		$categories = $this->db()->select($this->table->category)->where('cid',$cid);
 		if ($category) $categories->where('idx',$category);
@@ -1185,6 +1194,25 @@ class ModuleCalendar {
 		$this->IM->fireEvent('afterDoProcess',$this->getModule()->getName(),$action,$values,$results);
 		
 		return $results;
+	}
+	
+	/**
+	 * 모듈관리자인지 확인한다.
+	 *
+	 * @param int $midx 회원고유번호 (없을 경우 현재 로그인한 사용자)
+	 * @return boolean $isAdmin
+	 */
+	function isAdmin($midx=null,$cid=null) {
+		$midx = $midx == null ? $this->IM->getModule('member')->getLogged() : $midx;
+		if ($this->IM->getModule('member')->isAdmin($midx) == true) return true;
+		if (isset($this->admins[$midx]) == false) {
+			$check = $this->db()->select($this->table->admin)->where('midx',$midx)->getOne();
+			if ($check == null) $this->admins[$midx] = false;
+			elseif ($check->cid == '*') $this->admins[$midx] = true;
+			else $this->admins[$midx] = explode(',',$check->cid);
+		}
+		
+		return $cid == null ? $this->admins[$midx] : $this->admins[$midx] === true || in_array($cid,$this->admins) == true;
 	}
 }
 ?>

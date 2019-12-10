@@ -7,7 +7,7 @@
  * @author Arzz (arzz@arzz.com)
  * @license MIT License
  * @version 3.0.0
- * @modified 2019. 11. 19.
+ * @modified 2019. 12. 11.
  */
 var Calendar = {
 	list:{
@@ -464,6 +464,215 @@ var Calendar = {
 						if (result.success == true) {
 							Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/worked"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function() {
 								Ext.getCmp("ModuleCalendarCategoryList").getStore().reload();
+							}});
+						}
+					});
+				}
+			}});
+		}
+	},
+	/**
+	 * 관리자관리
+	 */
+	admin:{
+		add:function(midx) {
+			var midx = midx ? midx : 0;
+			
+			new Ext.Window({
+				id:"ModuleCalendarAdminAddWindow",
+				title:(midx ? Calendar.getText("admin/admin/modify_admin") : Calendar.getText("admin/admin/add_admin")),
+				width:600,
+				height:500,
+				modal:true,
+				border:false,
+				layout:"fit",
+				items:[
+					new Ext.Panel({
+						border:false,
+						layout:"fit",
+						tbar:[
+							new Ext.form.Hidden({
+								id:"ModuleCalendarAdminAddMidx",
+								name:"midx",
+								value:midx,
+								disabled:midx
+							}),
+							new Ext.form.TextField({
+								id:"ModuleCalendarAdminAddText",
+								name:"text",
+								emptyText:"검색버튼을 클릭하여 관리자로 지정할 회원을 검색하세요.",
+								readOnly:true,
+								flex:1,
+								listeners:{
+									focus:function() {
+										Member.search(function(member) {
+											var text = member.name + "(" + member.nickname + ") / " + member.email;
+											Ext.getCmp("ModuleCalendarAdminAddText").setValue(text);
+											Ext.getCmp("ModuleCalendarAdminAddMidx").setValue(member.idx);
+										});
+									}
+								}
+							}),
+							new Ext.Button({
+								iconCls:"mi mi-search",
+								text:"검색",
+								disabled:midx,
+								handler:function() {
+									Member.search(function(member) {
+										var text = member.name + "(" + member.nickname + ") / " + member.email;
+										Ext.getCmp("ModuleCalendarAdminAddText").setValue(text);
+										Ext.getCmp("ModuleCalendarAdminAddMidx").setValue(member.idx);
+									});
+								}
+							}),
+							"-",
+							new Ext.form.Checkbox({
+								id:"ModuleCalendarAdminAddAll",
+								boxLabel:Calendar.getText("admin/admin/admin_all"),
+								listeners:{
+									change:function(form,value) {
+										Ext.getCmp("ModuleCalendarAdminAddList").setDisabled(value);
+									}
+								}
+							})
+						],
+						items:[
+							new Ext.grid.Panel({
+								id:"ModuleCalendarAdminAddList",
+								border:false,
+								selected:[],
+								layout:"fit",
+								autoScroll:true,
+								store:new Ext.data.JsonStore({
+									proxy:{
+										type:"ajax",
+										simpleSortMode:true,
+										url:ENV.getProcessUrl("calendar","@getCalendars"),
+										extraParams:{depth:"group",parent:"NONE"},
+										reader:{type:"json"}
+									},
+									remoteSort:false,
+									sorters:[{property:"title",direction:"ASC"}],
+									autoLoad:false,
+									pageSize:0,
+									fields:["idx","title"],
+									listeners:{
+										load:function(store,records,success,e) {
+											if (success == true) {
+												Ext.getCmp("ModuleCalendarAdminAddList").getSelectionModel().deselectAll(true);
+												var selected = Ext.getCmp("ModuleCalendarAdminAddList").selected;
+												for (var i=0, loop=store.getCount();i<loop;i++) {
+													if ($.inArray(store.getAt(i).get("cid"),selected) > -1) {
+														Ext.getCmp("ModuleCalendarAdminAddList").getSelectionModel().select(i,true);
+													}
+												}
+											} else {
+												if (e.getError()) {
+													Ext.Msg.show({title:Admin.getText("alert/error"),msg:e.getError(),buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+												} else {
+													Ext.Msg.show({title:Admin.getText("alert/error"),msg:Admin.getErrorText("LOAD_DATA_FAILED"),buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+												}
+											}
+										}
+									}
+								}),
+								columns:[{
+									text:Calendar.getText("admin/list/columns/cid"),
+									width:180,
+									dataIndex:"cid",
+								},{
+									text:Calendar.getText("admin/list/columns/title"),
+									flex:1,
+									dataIndex:"title"
+								}],
+								selModel:new Ext.selection.CheckboxModel({mode:"SIMPLE"})
+							})
+						]
+					})
+				],
+				buttons:[
+					new Ext.Button({
+						text:Admin.getText("button/confirm"),
+						handler:function() {
+							var midx = Ext.getCmp("ModuleCalendarAdminAddMidx").getValue();
+							if (Ext.getCmp("ModuleCalendarAdminAddAll").getValue() == true) {
+								var cid = "*";
+							} else {
+								var cids = Ext.getCmp("ModuleCalendarAdminAddList").getSelectionModel().getSelection();
+								for (var i=0, loop=cids.length;i<loop;i++) {
+									cids[i] = cids[i].get("cid");
+								}
+								var cid = cids.join(",");
+							}
+							
+							if (!midx) {
+								Ext.Msg.show({title:Admin.getText("alert/error"),msg:"관리자로 추가할 회원을 검색하여 주십시오.",buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+							} else {
+								Ext.Msg.wait(Admin.getText("action/working"),Admin.getText("action/saving"));
+								$.send(ENV.getProcessUrl("calendar","@saveAdmin"),{midx:midx,cid:cid},function(result) {
+									if (result.success == true) {
+										Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/saved"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function() {
+											Ext.getCmp("ModuleCalendarAdminList").getStore().reload();
+											Ext.getCmp("ModuleCalendarAdminAddWindow").close();
+										}});
+									}
+								});
+							}
+						}
+					}),
+					new Ext.Button({
+						text:Admin.getText("button/close"),
+						handler:function() {
+							Ext.getCmp("ModuleCalendarAdminAddWindow").close();
+						}
+					})
+				],
+				listeners:{
+					show:function() {
+						if (midx == 0) {
+							Ext.getCmp("ModuleCalendarAdminAddList").getStore().load();
+						} else {
+							Ext.Msg.wait(Admin.getText("action/working"),Admin.getText("action/loading"));
+							$.send(ENV.getProcessUrl("calendar","@getAdmin"),{midx:midx},function(result) {
+								if (result.success == true) {
+									Ext.Msg.hide();
+									Ext.getCmp("ModuleCalendarAdminAddText").setValue(result.member.name+"("+result.member.nickname+") / "+result.member.email);
+									if (result.cid == "*") {
+										Ext.getCmp("ModuleCalendarAdminAddAll").setValue(true);
+									} else {
+										Ext.getCmp("ModuleCalendarAdminAddAll").setValue(false);
+										Ext.getCmp("ModuleCalendarAdminAddList").selected = result.cid;
+									}
+									Ext.getCmp("ModuleCalendarAdminAddList").getStore().load();
+								}
+							});
+						}
+					}
+				}
+			}).show();
+		},
+		/**
+		 * 관리자 삭제
+		 */
+		delete:function() {
+			var selected = Ext.getCmp("ModuleCalendarAdminList").getSelectionModel().getSelection();
+			if (selected.length == 0) {
+				Ext.Msg.show({title:Admin.getText("alert/error"),msg:"삭제할 관리자를 선택하여 주십시오.",buttons:Ext.Msg.OK,icon:Ext.Msg.ERROR});
+				return;
+			}
+			
+			var midxes = [];
+			for (var i=0, loop=selected.length;i<loop;i++) {
+				midxes[i] = selected[i].data.midx;
+			}
+			
+			Ext.Msg.show({title:Admin.getText("alert/info"),msg:"선택된 관리자를 삭제하시겠습니까?",buttons:Ext.Msg.OKCANCEL,icon:Ext.Msg.QUESTION,fn:function(button) {
+				if (button == "ok") {
+					Ext.Msg.wait(Admin.getText("action/working"),Admin.getText("action/loading"));
+					$.send(ENV.getProcessUrl("calendar","@deleteAdmin"),{midx:midxes.join(",")},function(result) {
+						if (result.success == true) {
+							Ext.Msg.show({title:Admin.getText("alert/info"),msg:Admin.getText("action/worked"),buttons:Ext.Msg.OK,icon:Ext.Msg.INFO,fn:function() {
+								Ext.getCmp("ModuleCalendarAdminList").getStore().reload();
 							}});
 						}
 					});
