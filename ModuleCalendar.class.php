@@ -1212,7 +1212,7 @@ class ModuleCalendar {
 			else $this->admins[$midx] = explode(',',$check->cid);
 		}
 		
-		return $cid == null ? $this->admins[$midx] : $this->admins[$midx] === true || in_array($cid,$this->admins) == true;
+		return $cid == null ? $this->admins[$midx] : $this->admins[$midx] === true || in_array($cid,$this->admins[$midx]) == true;
 	}
 }
 ?>
