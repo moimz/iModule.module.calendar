@@ -623,7 +623,7 @@ class iCal {
     {
         $events = $this->cal['VEVENT'];
         if (!empty($events)) {
-            $lastIndex = sizeof($events) - 1;
+            $lastIndex = count($events) - 1;
             $lastEvent = $events[$lastIndex];
             if (!isset($lastEvent['RRULE']) || $lastEvent['RRULE'] === '' && $this->doesEventStartOutsideWindow($lastEvent)) {
                 $this->eventCount--;
@@ -868,7 +868,7 @@ class iCal {
                     // Match semicolon separator outside of quoted substrings
                     preg_match_all('~[^' . PHP_EOL . '";]+(?:"[^"\\\]*(?:\\\.[^"\\\]*)*"[^' . PHP_EOL . '";]*)*~', $property, $attributes);
                     // Remove multi-dimensional array and use the first key
-                    $attributes = (sizeof($attributes) === 0) ? array($property) : reset($attributes);
+                    $attributes = (count($attributes) === 0) ? array($property) : reset($attributes);
 
                     if (is_array($attributes)) {
                         foreach ($attributes as $attribute) {
@@ -879,7 +879,7 @@ class iCal {
                                 $values
                             );
                             // Remove multi-dimensional array and use the first key
-                            $value = (sizeof($values) === 0) ? null : reset($values);
+                            $value = (count($values) === 0) ? null : reset($values);
 
                             if (is_array($value) && isset($value[1])) {
                                 // Remove double quotes from beginning and end only
@@ -1232,7 +1232,7 @@ class iCal {
                         $countOrig = (is_numeric($rrules['COUNT']) && $rrules['COUNT'] > 1) ? $rrules['COUNT'] : 0;
 
                         // Increment count by the number of excluded dates
-                        $countOrig += sizeof($exdates);
+                        $countOrig += count($exdates);
 
                         // Remove one to exclude the occurrence that initialises the rule
                         $count = ($countOrig - 1);
@@ -2626,7 +2626,7 @@ class iCal {
 	function trimToRecurrenceCount(array $rrules, array $recurrenceEvents) {
 		if (isset($rrules['COUNT'])) {
 			$recurrenceCount = (intval($rrules['COUNT']) - 1);
-			$surplusCount	= (sizeof($recurrenceEvents) - $recurrenceCount);
+			$surplusCount	= (count($recurrenceEvents) - $recurrenceCount);
 
 			if ($surplusCount > 0) {
 				$recurrenceEvents  = array_slice($recurrenceEvents, 0, $recurrenceCount);
