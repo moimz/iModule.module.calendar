@@ -1067,7 +1067,7 @@ class ModuleCalendar {
 		REQUIRE_ONCE $this->getModule()->getPath().'/classes/iCal.class.php';
 		
 		if ($category->ical) {
-			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < time() - 3600) {
+			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < time() - 600) {
 				$iCal = new iCal($category->ical);
 				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
 			} else {
@@ -1161,10 +1161,12 @@ class ModuleCalendar {
 	 * @param string $cid 캘린더아이디
 	 */
 	function updateCategory($category) {
-		$status = $this->db()->select($this->table->event,'count(*) as event')->where('category',$category)->getOne();
+		$category = $this->getCategory($category);
+		$status = $this->db()->select($this->table->event,'count(*) as event')->where('category',$category->idx)->getOne();
 		$event = $status->event ? $status->event : 0;
 		$latest_update = time();
-		$this->db()->update($this->table->category,array('event'=>$event,'latest_update'=>$latest_update))->where('idx',$category)->execute();
+		$this->db()->update($this->table->category,array('event'=>$event,'latest_update'=>$latest_update))->where('idx',$category->idx)->execute();
+		$this->IM->cache()->reset('module','calendar',$category->cid.'@'.$category->idx);
 	}
 	
 	/**
