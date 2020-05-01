@@ -1067,7 +1067,7 @@ class ModuleCalendar {
 		REQUIRE_ONCE $this->getModule()->getPath().'/classes/iCal.class.php';
 		
 		if ($category->ical) {
-			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < time() - 600) {
+			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < time() - 1800) {
 				$iCal = new iCal($category->ical);
 				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
 			} else {
@@ -1075,7 +1075,7 @@ class ModuleCalendar {
 				$iCal->setRawData($this->IM->cache()->get('module','calendar',$cid.'@'.$category->idx));
 			}
 		} else {
-			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < $category->latest_update) {
+			if ($this->IM->cache()->check('module','calendar',$cid.'@'.$category->idx) < max($category->latest_update,time() - 1800)) {
 				$iCal = new iCal($this->IM->getModuleUrl('calendar','ical',$cid,$category->idx,true));
 				$this->IM->cache()->store('module','calendar',$cid.'@'.$category->idx,$iCal->getRawData());
 			} else {
