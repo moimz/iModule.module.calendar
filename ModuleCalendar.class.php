@@ -1090,7 +1090,7 @@ class ModuleCalendar {
 		foreach ($iCal->eventsFromRange(date('Y-m-d',$start_time),date('Y-m-d',$end_time)) as $data) {
 			$event = new stdClass();
 			$event->id = $data->uid.(isset($data->recurrence_id) == true ? '@'.$data->recurrence_id : '');
-			$event->title = $data->summary;
+			$event->title = $this->decodeHtmlEntities($data->summary);
 			$event->start = date('c',strtotime($data->dtstart));
 			$event->end = date('c',strtotime($data->dtend));
 			$event->allDay = (strlen($data->dtstart) == 8 && strlen($data->dtend) == 8) || (substr($data->dtstart,-1) == 'Z' && substr($data->dtend,-1) == 'Z');
@@ -1106,13 +1106,13 @@ class ModuleCalendar {
 			$event->data->uid = $data->uid;
 			$event->data->rid = isset($data->recurrence_id) == true ? $data->recurrence_id : null;
 			$event->data->category = $category->idx;
-			$event->data->summary = $data->summary;
+			$event->data->summary = str_replace(array('&amp;'),array('&'),$data->summary);
 			$event->data->start_time = strtotime($data->dtstart);
 			$event->data->end_time = strtotime($data->dtend);
 			$event->data->midx = isset($data->x_imodule_author) == true ? intval(Decoder($data->x_imodule_author)) : 0;
 			$event->data->url = isset($data->url) == true ? $data->url : null;
-			$event->data->description = isset($data->description) == true ? $data->description : null;
-			$event->data->location = isset($data->location) == true ? $data->location : null;
+			$event->data->description = isset($data->description) == true ? $this->decodeHtmlEntities($data->description) : null;
+			$event->data->location = isset($data->location) == true ? $this->decodeHtmlEntities($data->location) : null;
 			$event->data->is_allday = $event->allDay;
 			
 			$event->origin = $data;
@@ -1167,6 +1167,16 @@ class ModuleCalendar {
 		$latest_update = time();
 		$this->db()->update($this->table->category,array('event'=>$event,'latest_update'=>$latest_update))->where('idx',$category->idx)->execute();
 		$this->IM->cache()->reset('module','calendar',$category->cid.'@'.$category->idx);
+	}
+	
+	/**
+	 * HTML 엔티티를 변환한다.
+	 *
+	 * @return string $string
+	 * @return string $string
+	 */
+	function decodeHtmlEntities($string) {
+		return str_replace(array('&amp;'),array('&'),$string);
 	}
 	
 	/**
