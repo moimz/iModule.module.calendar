@@ -17,7 +17,7 @@ if (defined('__IM__') == false) exit;
 
 <ul class="category">
 	<?php foreach ($categories as $category) { ?>
-	<li><i style="background:<?php echo $category->color; ?>"></i><?php echo $category->title; ?></i></li>
+	<li><i style="background:<?php echo $category->color; ?>"></i><?php echo $category->title; ?></li>
 	<?php } ?>
 </ul>
 
