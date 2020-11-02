@@ -530,7 +530,7 @@ class ModuleCalendar {
 					$lines[] = $value;
 				}
 				
-				$ics[$i] = $preamble.':'.join($lines,"\r\n\t");
+				$ics[$i] = $preamble.':'.implode("\r\n\t",$lines);
 			}
 			
 			header("Content-type: text; charset=utf-8");
