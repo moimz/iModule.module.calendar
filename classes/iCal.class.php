@@ -517,8 +517,8 @@ class iCal {
                     $line = $this->replaceWindowsTimeZoneId($line);
                 }
                 $add = $this->keyValueFromString($line);
-                $keyword = $add[0];
-                $values  = $add[1]; // May be an array containing multiple values
+                $keyword = isset($add[0]) == true ? $add[0] : array();
+                $values  = isset($add[1]) == true ? $add[1] : array(); // May be an array containing multiple values
                 if (!is_array($values)) {
                     if (!empty($values)) {
                         $values = array($values); // Make an array as not already
